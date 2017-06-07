@@ -6,5 +6,10 @@
     <string name="add">add</string>
     <string name="art">Article</string>
     <string name="code">Code</string>
+    <string name="Add">add</string>
+    <string name="Clear">Clear</string>
+    <string name="name">Name</string>
+    <string name="count_count_base">Count/Count Base</string>
+    <string name="price">Price</string>
 
 </resources>
