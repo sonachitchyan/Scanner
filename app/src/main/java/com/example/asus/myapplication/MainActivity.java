@@ -84,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
                 count_text.setText("");
                 name_text.setText("");
                 value_text.setText("");
+                barcode.setText("");
+                count.setText("");
             }
         });
 
@@ -96,8 +98,6 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
         });
 
         radio_barcode.setChecked(true);
-        barcode.setFocusable(false);
-        barcode.setFocusableInTouchMode(false);
         count.setCursorVisible(false);
         barcode.setCursorVisible(false);
 
@@ -199,23 +199,27 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
             data.setName("");
             switch (hints[0]) {
                 case "Barcode":
-
-                    for (Data d : dataList) {
-                        if (d.getBarcode().equals(barcode.getText().toString())) {
-                            int temp = d.getCount();
-                            if (count.getText().toString().equals("")) {
-                                d.setCount(temp + 1);
-                            } else {
-                                d.setCount(temp + Integer.parseInt(count.getText().toString()));
+                    if (!barcode.getText().toString().equals("")) {
+                        for (Data d : dataList) {
+                            if (d.getBarcode().equals(barcode.getText().toString())) {
+                                int temp = d.getCount();
+                                if (count.getText().toString().equals("")) {
+                                    d.setCount(temp + 1);
+                                } else {
+                                    d.setCount(temp + Integer.parseInt(count.getText().toString()));
+                                }
+                                exists = true;
                             }
-                            exists = true;
+                        }
+                        if (!exists) {
+                            data.setBarcode(barcode.getText().toString());
+                            data.setCode(0);
+                            data.setArticle("");
+                            dataList.add(data);
                         }
                     }
-                    if (!exists) {
-                        data.setBarcode(barcode.getText().toString());
-                        data.setCode(0);
-                        data.setArticle("");
-                        dataList.add(data);
+                    else {
+                        Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
                     }
                     break;
                 case "Code":
@@ -321,6 +325,8 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
                 count_text.setText("" + data.getCount() + "/" + data.getCount_db());
                 value_text.setText("" + data.getPrice());
             }
+            barcode.setText("");
+            count.setText("");
         }
 
     }
