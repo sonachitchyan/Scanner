@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -28,8 +30,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -140,44 +146,16 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
         View view = getCurrentFocus();
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             switch (keyCode) {
-                case 7:
-                    if (!((EditText) view).getText().toString().equals("")) {
-                        adder(0, view);
+                case KeyEvent.KEYCODE_TAB:
+                    switch (view.getId()) {
+                        case R.id.barcode:
+                            count.requestFocus();
+                            break;
+                        case R.id.count:
+                            Reader reader = new Reader();
+                            reader.execute();
+                            break;
                     }
-                    break;
-                case 10:
-                    adder(1, view);
-                    break;
-                case 29:
-                    adder(2, view);
-                    break;
-                case 32:
-                    adder(3, view);
-                    break;
-                case 35:
-                    adder(4, view);
-                    break;
-                case 38:
-                    adder(5, view);
-                    break;
-                case 41:
-                    adder(6, view);
-                    break;
-                case 44:
-                    adder(7, view);
-                    break;
-                case 48:
-                    adder(8, view);
-                    break;
-                case 51:
-                    adder(9, view);
-                    break;
-                case 67:
-                    String text = ((EditText) view).getText().toString();
-                    if (!text.equals("")) {
-                        text = text.substring(0, text.length() - 1);
-                    }
-                    ((EditText) view).setText(text);
                     break;
             }
         }
@@ -185,11 +163,12 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
     }
 
 
-    class Reader extends AsyncTask<String, Void, String> {
+    class Reader extends AsyncTask<Void, Void, Void> {
         Gson gson = new Gson();
         String a = null;
         String filename = "data.txt";
         File file;
+        List<Data> dataList1 = null;
 
         @Override
         protected void onPreExecute() {
@@ -217,8 +196,7 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
                             data.setArticle("");
                             dataList.add(data);
                         }
-                    }
-                    else {
+                    } else {
                         Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
                     }
                     break;
@@ -273,24 +251,26 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
             }
 
             a = gson.toJson(dataList);
-            if(!isExternalStorageWritable()){
+            if (!isExternalStorageWritable()) {
                 Toast.makeText(MainActivity.this, "failed to connect", Toast.LENGTH_SHORT).show();
-            }
-            else {
-                file = new File(Environment.getExternalStorageDirectory(), a);
+            } else {
+                file = new File(Environment.getExternalStorageDirectory(), filename);
             }
             try {
-                FileOutputStream fos = new FileOutputStream(file);
-                fos.write(a.getBytes());
-                a = "";
-                fos.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+                FileOutputStream fileOutput = new FileOutputStream(file);
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutput);
+                outputStreamWriter.write(a);
+                outputStreamWriter.flush();
+                fileOutput.getFD().sync();
+                outputStreamWriter.close();
+            } catch (IOException e) {
+                Log.e("Exception", "File write failed: " + e.toString());
             }
+
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected Void doInBackground(Void... params) {
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
@@ -300,41 +280,52 @@ public class MainActivity extends AppCompatActivity implements View.OnKeyListene
         }
 
         @Override
-        protected void onPostExecute(String aVoid) {
+        protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-
             try {
-                FileInputStream fis = new FileInputStream(filename);
-                DataInputStream dis = new DataInputStream(fis);
-                BufferedReader buff = new BufferedReader(new InputStreamReader(dis));
-                String strline;
-                while ((strline = buff.readLine()) != null){
-                    a = a + strline;
+                InputStream inputStream = openFileInput(filename);
+
+                if (inputStream != null) {
+                    File myFile = new File("/sdcard0/" + filename);
+                    FileInputStream fIn = new FileInputStream(myFile);
+                    BufferedReader myReader = new BufferedReader(
+                            new InputStreamReader(fIn));
+                    String strline = "";
+                    StringBuffer stringBuffer = new StringBuffer();
+                    while ((strline = myReader.readLine()) != null) {
+                        a = a + strline + "\n";
+                    }
+                    myReader.close();
                 }
-                dis.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                Log.e("login activity", "File not found: " + e.toString());
+            } catch (IOException e) {
+                Log.e("login activity", "Can not read file: " + e.toString());
             }
 
-            List<Data> dataList1 = gson.fromJson(a, new TypeToken<ArrayList<Data>>() {
+            Gson gson = new Gson();
+            JsonReader reader = new JsonReader(new StringReader(a));
+            reader.setLenient(true);
+
+            dataList1 = gson.fromJson(reader, new TypeToken<ArrayList<Data>>() {
             }.getType());
-            Data data;
-            if (!dataList.isEmpty()) {
-                data = dataList.get(dataList1.size() - 1);
-                name_text.setText(data.getName());
-                count_text.setText("" + data.getCount() + "/" + data.getCount_db());
-                value_text.setText("" + data.getPrice());
+
+            if (!dataList1.isEmpty()) {
+                for (Data d: dataList1){
+                    if (d.getBarcode().equals(barcode.getText().toString())){
+                        name_text.setText(d.getName());
+                        count_text.setText("" + d.getCount() + "/" + d.getCount_db());
+                        value_text.setText(""+ d.getPrice());
+                    }
+                }
             }
+
             barcode.setText("");
             count.setText("");
+
+
         }
 
-    }
-
-    public void adder(int i, View v) {
-        String a = ((EditText) v).getText().toString();
-        a += i;
-        ((EditText) v).setText(a);
     }
 
     @Override
