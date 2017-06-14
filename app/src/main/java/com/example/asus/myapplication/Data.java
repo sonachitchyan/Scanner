@@ -72,7 +72,9 @@ public class Data {
     public Data() {
     }
 
-    public Data(String name,  int article, String barcode, String code, int count, int count_db, double price) {
+    public Data(String name,  int article, String barcode,
+                String code, int count,
+                int count_db, double price) {
         this.count = count;
         this.article = article;
         this.count_db = count_db;
@@ -80,5 +82,9 @@ public class Data {
         this.code = code;
         this.name = name;
         this.price = price;
+    }
+
+    public Data(String name) {
+        this.name = name;
     }
 }

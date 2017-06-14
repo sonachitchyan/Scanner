@@ -5,9 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     Gson gs = new Gson();
     IntentFilter intentfilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
     DataBaseHandler db = new DataBaseHandler(this);
+    List<Data> dataList, dataList1;
+
 
 
     @Override
@@ -61,20 +62,29 @@ public class MainActivity extends AppCompatActivity {
         name_text = (TextView) findViewById(R.id.name_text);
         count_text = (TextView) findViewById(R.id.count_text);
         value_text = (TextView) findViewById(R.id.value_text);
+        dataList1 = new ArrayList<>();
 
-        String text = filereader("import.txt");
-        JsonReader jsonReader = new JsonReader(new StringReader(text));
-        jsonReader.setLenient(true);
-        final List<Data> dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){
-        }.getType());
-        if (!dataList.isEmpty()){
-            for (Data d: dataList){
+        filewriter("export.txt", "");
+
+
+        if (db.isEmpty()) {
+            String text = filereader("import.txt");
+            JsonReader jsonReader = new JsonReader(new StringReader(text));
+            jsonReader.setLenient(true);
+            dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
+            }.getType());
+            for (Data d : dataList) {
                 d.setCount(0);
                 db.addInfo(d);
             }
+        } else {
+            dataList = db.getAllInfo();
+            for (Data d : dataList) {
+                d.setCount(0);
+                db.updateInfoByBarcode(d);
+            }
+
         }
-
-
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -98,6 +108,14 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Reader reader = new Reader();
                 reader.execute();
+            }
+        });
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for (Data d : dataList) {
+                    Toast.makeText(MainActivity.this, "" + d.getCount() + "/" + d.getCount_db(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -141,46 +159,75 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             boolean def = false;
-            if (count.getText().toString().equals("")){
+            if (count.getText().toString().equals("")) {
                 def = true;
             }
-            int temp = 1;
-            switch (hints[0]){
-                case "Barcode":
-                    data = db.getInfoByBarcode(barcode.getText().toString());
-                    temp = data.getCount();
-                    if (def){
-                        temp++;
-                    }
-                    else{
-                        temp+= Integer.parseInt(count.getText().toString());
-                    }
-                    break;
-                case "Code":
-                    data = db.getInfoByCode(barcode.getText().toString());
-                    temp = data.getCount();
-                    if (def){
-                        temp++;
-                    }
-                    else{
-                        temp+= Integer.parseInt(count.getText().toString());
-                    }
-                    break;
-                case "Article":
-                    data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
-                    temp = data.getCount();
-                    if (def){
-                        temp++;
-                    }
-                    else{
-                        temp+= Integer.parseInt(count.getText().toString());
-                    }
-                    break;
-            }
-            data.setCount(temp);
+            if (!barcode.getText().toString().equals("")) {
+                int temp = 0;
+                switch (hints[0]) {
+                    case "Barcode":
+                        data = db.getInfoByBarcode(barcode.getText().toString());
+                        temp = data.getCount();
+                        if (def) {
+                            temp++;
+                        } else {
+                            temp += Integer.parseInt(count.getText().toString());
+                        }
+                        break;
+                    case "Code":
+                        data = db.getInfoByCode(barcode.getText().toString());
+                        temp = data.getCount();
+                        if (def) {
+                            temp++;
+                        } else {
+                            temp += Integer.parseInt(count.getText().toString());
+                        }
+                        break;
+                    case "Article":
+                        data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
+                        temp = data.getCount();
+                        if (def) {
+                            temp++;
+                        } else {
+                            temp += Integer.parseInt(count.getText().toString());
+                        }
+                        break;
+                }
+                data.setCount(temp);
+                boolean ex = false;
+                if (dataList1.isEmpty()) {
+                    dataList1.add(data);
+                } else {
+                    for (Data d : dataList1) {
+                        switch (hints[0]) {
+                            case "Barcode":
+                                if (d.getBarcode().equals(barcode.getText().toString())) {
+                                    d.setCount(temp);
+                                    ex = true;
+                                }
+                                break;
+                            case "Code":
+                                if (d.getCode().equals(barcode.getText().toString())) {
+                                    d.setCount(temp);
+                                    ex = true;
+                                }
+                                break;
+                            case "Article":
+                                if (String.valueOf(d.getArticle()).equals(barcode.getText().toString())) {
+                                    d.setCount(temp);
+                                    ex = true;
+                                }
+                                break;
+                        }
 
+                    }
+                    if (!ex) {
+                        dataList1.add(data);
+                    }
+                }
             }
 
+        }
 
 
         @Override
@@ -196,20 +243,27 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            switch (hints[0]){
-                case "Barcode":
-                    db.updateInfoByBarcode(data);
-                    break;
-                case "Code":
-                    db.updateInfoByCode(data);
-                    break;
-                case "Article":
-                    db.updateInfoByArticle(data);
-                    break;
+            if (!barcode.getText().toString().equals("")) {
+                switch (hints[0]) {
+                    case "Barcode":
+                        db.updateInfoByBarcode(data);
+                        break;
+                    case "Code":
+                        db.updateInfoByCode(data);
+                        break;
+                    case "Article":
+                        db.updateInfoByArticle(data);
+                        break;
+                }
+                name_text.setText(data.getName());
+                count_text.setText(data.getCount() + "/" + data.getCount_db());
+                value_text.setText(String.valueOf(data.getPrice()));
+                String info = gs.toJson(dataList1);
+                filewriter("export.txt", info);
             }
-            name_text.setText(data.getName());
-            count_text.setText(data.getCount() + "/" + data.getCount_db());
-            value_text.setText(String.valueOf(data.getPrice()));
+            else {
+                Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
+            }
         }
 
     }
@@ -227,19 +281,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return false;
-    }
-
-    public File filemaker(String exportname) {
-        File result = null;
-        if (isExternalStorageWritable()) {
-            result = new File(Environment.getExternalStorageDirectory().getPath() + exportname);
-
-        } else {
-            Toast.makeText(MainActivity.this, "failed to connect", Toast.LENGTH_SHORT).show();
-        }
-        String finaltext ="[]";
-        filewriter(result, finaltext);
-        return result;
     }
 
 
@@ -271,15 +312,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void filewriter(File file, String text) {
+    public void filewriter(String name, String text) {
         try {
+            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + name);
             FileOutputStream fileOutput = new FileOutputStream(file);
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutput);
             outputStreamWriter.write(text);
             outputStreamWriter.flush();
             outputStreamWriter.close();
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
         }
 
