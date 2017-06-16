@@ -11,9 +11,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Asus on 13.06.2017.
- */
+
 
 public class DataBaseHandler extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "data";
@@ -178,9 +176,9 @@ public class DataBaseHandler extends SQLiteOpenHelper {
     public boolean isEmpty(){
         String selectQuery = "SELECT  * FROM " + TABlE_NAME;
 
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
-        if (cursor.moveToFirst()){
+        if (cursor.getCount()>0){
             return false;
         }
         return true;
@@ -190,7 +188,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         // Select All Query
         String selectQuery = "SELECT  * FROM " + TABlE_NAME;
 
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
 
         if (cursor.moveToFirst()) {
@@ -213,5 +211,11 @@ public class DataBaseHandler extends SQLiteOpenHelper {
     public void deletAll(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABlE_NAME, null, null);
+    }
+
+    public void makeAllZero() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=0";
+        db.execSQL(query);
     }
 }

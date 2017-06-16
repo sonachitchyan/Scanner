@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,26 +66,14 @@ public class MainActivity extends AppCompatActivity {
         dataList1 = new ArrayList<>();
 
         filewriter("export.txt", "");
-
-
-        if (db.isEmpty()) {
-            String text = filereader("import.txt");
-            JsonReader jsonReader = new JsonReader(new StringReader(text));
-            jsonReader.setLenient(true);
-            dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
-            }.getType());
-            for (Data d : dataList) {
-                d.setCount(0);
-                db.addInfo(d);
-            }
-        } else {
-            dataList = db.getAllInfo();
-            for (Data d : dataList) {
-                d.setCount(0);
-                db.updateInfoByBarcode(d);
-            }
-
+        if (!db.isEmpty()){
+            db.makeAllZero();
         }
+
+
+
+
+
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -113,9 +102,9 @@ public class MainActivity extends AppCompatActivity {
         clear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for (Data d : dataList) {
-                    Toast.makeText(MainActivity.this, "" + d.getCount() + "/" + d.getCount_db(), Toast.LENGTH_SHORT).show();
-                }
+                dataList1.clear();
+                db.makeAllZero();
+                Toast.makeText(MainActivity.this, "Ready", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -158,6 +147,17 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            if (db.isEmpty()) {
+                String text = filereader("import.txt");
+                JsonReader jsonReader = new JsonReader(new StringReader(text));
+                jsonReader.setLenient(true);
+                dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
+                }.getType());
+                for (Data d : dataList) {
+                    d.setCount(0);
+                    db.addInfo(d);
+                }
+            }
             boolean def = false;
             if (count.getText().toString().equals("")) {
                 def = true;
@@ -313,15 +313,20 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void filewriter(String name, String text) {
-        try {
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + name);
-            FileOutputStream fileOutput = new FileOutputStream(file);
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutput);
-            outputStreamWriter.write(text);
-            outputStreamWriter.flush();
-            outputStreamWriter.close();
-        } catch (IOException e) {
-            Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
+        if (isExternalStorageWritable()) {
+            try {
+                File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + name);
+                FileOutputStream fileOutput = new FileOutputStream(file);
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutput);
+                outputStreamWriter.write(text);
+                outputStreamWriter.flush();
+                outputStreamWriter.close();
+            } catch (IOException e) {
+                Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
+            }
+        }
+        else {
+            Toast.makeText(MainActivity.this, "Lost connection", Toast.LENGTH_SHORT).show();
         }
 
 
