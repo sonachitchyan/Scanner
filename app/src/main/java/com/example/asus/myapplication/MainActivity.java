@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
         filewriter("export.txt", "");
         if (!db.isEmpty()){
-            db.makeAllZero();
+            db.deletAll();
         }
 
 
@@ -104,6 +104,11 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 dataList1.clear();
                 db.makeAllZero();
+                barcode.setText("");
+                count.setText("");
+                name_text.setText("");
+                count_text.setText("");
+                value_text.setText("");
                 Toast.makeText(MainActivity.this, "Ready", Toast.LENGTH_SHORT).show();
             }
         });
@@ -119,19 +124,19 @@ public class MainActivity extends AppCompatActivity {
         if (c) {
             switch (view.getId()) {
                 case R.id.radio_article:
-                    barcode.setHint("Article");
+                    barcode.setHint("արտիկուլ");
                     barcode.setText("");
                     hints[0] = "Article";
                     barcode.setInputType(InputType.TYPE_CLASS_TEXT);
                     break;
                 case R.id.radio_code:
-                    barcode.setHint("Code");
+                    barcode.setHint("կոդ");
                     hints[0] = "Code";
                     barcode.setText("");
                     barcode.setInputType(InputType.TYPE_CLASS_NUMBER);
                     break;
                 case R.id.radio_barcode:
-                    barcode.setHint("Barcode");
+                    barcode.setHint("շտրիխ");
                     hints[0] = "Barcode";
                     barcode.setInputType(InputType.TYPE_CLASS_NUMBER);
                     break;
@@ -148,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             if (db.isEmpty()) {
-                String text = filereader("import.txt");
+                String text = filereader("import1_2000.txt");
                 JsonReader jsonReader = new JsonReader(new StringReader(text));
                 jsonReader.setLenient(true);
                 dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {

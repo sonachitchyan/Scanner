@@ -1,15 +1,16 @@
 <resources>
     <string name="app_name">Scanner</string>
-    <string name="scan">scan</string>
-    <string name="barcode">Barcode</string>
-    <string name="count">Count ... Default 1</string>
-    <string name="add">add</string>
-    <string name="art">Article</string>
-    <string name="code">Code</string>
-    <string name="Add">add</string>
-    <string name="Clear">Clear</string>
-    <string name="name">Name</string>
-    <string name="count_count_base">Count/Count Base</string>
-    <string name="price">Price</string>
+    <string name="scan">սկան</string>
+    <string name="barcode">շտրիխ</string>
+    <string name="Barcode">Շտրիխ</string>
+    <string name="count">քանակ(սկզբնական-1)</string>
+    <string name="add">ավելացնել</string>
+    <string name="art">Արտիկուլ</string>
+    <string name="code">Կոդ</string>
+    <string name="Add">ավելացնել</string>
+    <string name="Clear">մաքրել</string>
+    <string name="name">անուն</string>
+    <string name="count_count_base">առկա/բազա</string>
+    <string name="price">գին</string>
 
 </resources>
