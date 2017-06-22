@@ -5,10 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,11 +25,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -40,14 +40,14 @@ public class MainActivity extends AppCompatActivity {
     private EditText barcode, count;
     private TextView name_text, count_text, value_text;
     private String hints[] = {"Barcode"};
-    private List<Data> dataList = new ArrayList<>();
     private BroadcastReceiver receiver;
+    Gson gs = new Gson();
     IntentFilter intentfilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
-    Gson gson = new Gson();
-    String a = null;
-    String filename = "export.txt", filetext;
-    File file;
-    List<Data> dataList1 = null;
+    DataBaseHandler db = new DataBaseHandler(this);
+    List<Data> dataList, dataList1;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,12 +63,15 @@ public class MainActivity extends AppCompatActivity {
         name_text = (TextView) findViewById(R.id.name_text);
         count_text = (TextView) findViewById(R.id.count_text);
         value_text = (TextView) findViewById(R.id.value_text);
-        file = filemaker(filename);
-        filetext = filereader(filename);
-        android.util.JsonReader jsonReader = new android.util.JsonReader(new StringReader(filetext));
-        jsonReader.setLenient(true);
-        dataList = gson.fromJson(String.valueOf(jsonReader), new TypeToken<ArrayList<Data>>() {
-        }.getType());
+        dataList1 = new ArrayList<>();
+
+        filewriter("export.txt", "");
+        if (!db.isEmpty()){
+            db.deletAll();
+        }
+
+
+
 
 
         receiver = new BroadcastReceiver() {
@@ -88,27 +91,25 @@ public class MainActivity extends AppCompatActivity {
 
         this.registerReceiver(receiver, intentfilter);
 
-        clear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dataList = new ArrayList<>();
-                count_text.setText("");
-                name_text.setText("");
-                value_text.setText("");
-                barcode.setText("");
-                count.setText("");
-                if (file != null) {
-                    file.delete();
-                }
-
-            }
-        });
 
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Reader reader = new Reader();
                 reader.execute();
+            }
+        });
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dataList1.clear();
+                db.makeAllZero();
+                barcode.setText("");
+                count.setText("");
+                name_text.setText("");
+                count_text.setText("");
+                value_text.setText("");
+                Toast.makeText(MainActivity.this, "Ready", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -123,19 +124,19 @@ public class MainActivity extends AppCompatActivity {
         if (c) {
             switch (view.getId()) {
                 case R.id.radio_article:
-                    barcode.setHint("Article");
+                    barcode.setHint("արտիկուլ");
                     barcode.setText("");
                     hints[0] = "Article";
                     barcode.setInputType(InputType.TYPE_CLASS_TEXT);
                     break;
                 case R.id.radio_code:
-                    barcode.setHint("Code");
+                    barcode.setHint("կոդ");
                     hints[0] = "Code";
                     barcode.setText("");
                     barcode.setInputType(InputType.TYPE_CLASS_NUMBER);
                     break;
                 case R.id.radio_barcode:
-                    barcode.setHint("Barcode");
+                    barcode.setHint("շտրիխ");
                     hints[0] = "Barcode";
                     barcode.setInputType(InputType.TYPE_CLASS_NUMBER);
                     break;
@@ -146,62 +147,93 @@ public class MainActivity extends AppCompatActivity {
 
     class Reader extends AsyncTask<Void, Void, Void> {
 
+        Data data = new Data();
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
-            switch (hints[0]) {
-                case "Barcode":
-                    if (!barcode.getText().toString().equals("")) {
-                        for (Data d : dataList) {
-                            if (d.getBarcode().equals(barcode.getText().toString())) {
-                                int temp = d.getCount();
-                                if (count.getText().toString().equals("")) {
-                                    d.setCount(temp + 1);
-                                } else {
-                                    d.setCount(temp + Integer.parseInt(count.getText().toString()));
-                                }
-                            }
+            if (db.isEmpty()) {
+                String text = filereader("import1_2000.txt");
+                JsonReader jsonReader = new JsonReader(new StringReader(text));
+                jsonReader.setLenient(true);
+                dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
+                }.getType());
+                for (Data d : dataList) {
+                    d.setCount(0);
+                    db.addInfo(d);
+                }
+            }
+            boolean def = false;
+            if (count.getText().toString().equals("")) {
+                def = true;
+            }
+            if (!barcode.getText().toString().equals("")) {
+                int temp = 0;
+                switch (hints[0]) {
+                    case "Barcode":
+                        data = db.getInfoByBarcode(barcode.getText().toString());
+                        temp = data.getCount();
+                        if (def) {
+                            temp++;
+                        } else {
+                            temp += Integer.parseInt(count.getText().toString());
                         }
-                    }
-                    break;
-                case "Code":
-                    if (!barcode.getText().equals("")) {
-                        for (Data d : dataList) {
-                            if (d.getCode() == Integer.parseInt(barcode.getText().toString())) {
-                                int temp = d.getCount();
-                                if (count.getText().toString().equals("")) {
-                                    d.setCount(temp + 1);
-                                } else {
-                                    d.setCount(temp + Integer.parseInt(count.getText().toString()));
+                        break;
+                    case "Code":
+                        data = db.getInfoByCode(barcode.getText().toString());
+                        temp = data.getCount();
+                        if (def) {
+                            temp++;
+                        } else {
+                            temp += Integer.parseInt(count.getText().toString());
+                        }
+                        break;
+                    case "Article":
+                        data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
+                        temp = data.getCount();
+                        if (def) {
+                            temp++;
+                        } else {
+                            temp += Integer.parseInt(count.getText().toString());
+                        }
+                        break;
+                }
+                data.setCount(temp);
+                boolean ex = false;
+                if (dataList1.isEmpty()) {
+                    dataList1.add(data);
+                } else {
+                    for (Data d : dataList1) {
+                        switch (hints[0]) {
+                            case "Barcode":
+                                if (d.getBarcode().equals(barcode.getText().toString())) {
+                                    d.setCount(temp);
+                                    ex = true;
                                 }
-                            }
+                                break;
+                            case "Code":
+                                if (d.getCode().equals(barcode.getText().toString())) {
+                                    d.setCount(temp);
+                                    ex = true;
+                                }
+                                break;
+                            case "Article":
+                                if (String.valueOf(d.getArticle()).equals(barcode.getText().toString())) {
+                                    d.setCount(temp);
+                                    ex = true;
+                                }
+                                break;
                         }
 
                     }
-                    break;
-                case "Article":
-                    if (!barcode.getText().equals("")) {
-                        for (Data d : dataList) {
-                            if (d.getArticle().equals(barcode.getText().toString())) {
-                                int temp = d.getCount();
-                                if (count.getText().toString().equals("")) {
-                                    d.setCount(temp + 1);
-                                } else {
-                                    d.setCount(temp + Integer.parseInt(count.getText().toString()));
-                                }
-                            }
-                        }
-
+                    if (!ex) {
+                        dataList1.add(data);
                     }
-                    break;
-
+                }
             }
 
-            a = gson.toJson(dataList);
-            filewriter(file, filename);
         }
+
 
         @Override
         protected Void doInBackground(Void... params) {
@@ -216,54 +248,27 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            String t = filereader(filename);
-            Gson gson = new Gson();
-            JsonReader reader = new JsonReader(new StringReader(t));
-            reader.setLenient(true);
-
-            dataList1 = gson.fromJson(reader, new TypeToken<ArrayList<Data>>() {
-            }.getType());
-
-            if (!dataList1.isEmpty()) {
+            if (!barcode.getText().toString().equals("")) {
                 switch (hints[0]) {
                     case "Barcode":
-                        for (Data d : dataList1) {
-                            if (d.getBarcode().equals(barcode.getText().toString())) {
-                                name_text.setText(d.getName());
-                                count_text.setText("" + d.getCount() + "/" + d.getCount_db());
-                                value_text.setText("" + d.getPrice());
-                                break;
-                            }
-                        }
+                        db.updateInfoByBarcode(data);
                         break;
                     case "Code":
-                        for (Data d : dataList1) {
-                            if (d.getCode() == Integer.parseInt(barcode.getText().toString())) {
-                                name_text.setText(d.getName());
-                                count_text.setText("" + d.getCount() + "/" + d.getCount_db());
-                                value_text.setText("" + d.getPrice());
-                                Toast.makeText(MainActivity.this, "a", Toast.LENGTH_SHORT).show();
-                                break;
-                            } else {
-                                Toast.makeText(MainActivity.this, "b", Toast.LENGTH_SHORT).show();
-                            }
-                        }
+                        db.updateInfoByCode(data);
                         break;
                     case "Article":
-                        for (Data d : dataList1) {
-                            if (d.getArticle().equals(barcode.getText().toString())) {
-                                name_text.setText(d.getName());
-                                count_text.setText("" + d.getCount() + "/" + d.getCount_db());
-                                value_text.setText("" + d.getPrice());
-                                break;
-                            }
-                        }
+                        db.updateInfoByArticle(data);
                         break;
-
                 }
+                name_text.setText(data.getName());
+                count_text.setText(data.getCount() + "/" + data.getCount_db());
+                value_text.setText(String.valueOf(data.getPrice()));
+                String info = gs.toJson(dataList1);
+                filewriter("export.txt", info);
             }
-            barcode.setText("");
-            count.setText("");
+            else {
+                Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
+            }
         }
 
     }
@@ -283,66 +288,52 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    public File filemaker(String exportname) {
-        String importname = "import.txt";
-        File result = null;
-        if (isExternalStorageWritable()) {
-            result = new File(Environment.getExternalStorageDirectory(), exportname);
-        } else {
-            Toast.makeText(MainActivity.this, "failed to connect", Toast.LENGTH_SHORT).show();
-        }
-        String text = "";
-        List<Data> datas = null;
-        text = filereader(exportname);
-        Gson gson = new Gson();
-        android.util.JsonReader jsonReader = new android.util.JsonReader(new StringReader(text));
-        jsonReader.setLenient(true);
-        datas = gson.fromJson(String.valueOf(jsonReader), new TypeToken<ArrayList<Data>>() {
-        }.getType());
-        for (Data d : datas) {
-            d.setCount(0);
-        }
-        String finaltext = gson.toJson(datas);
-        filewriter(result, finaltext);
-        return result;
-    }
-
 
     public String filereader(String filename) {
-        String result = "";
-        try {
-            InputStream inputStream = openFileInput(filename);
 
-            if (inputStream != null) {
-                File myFile = new File(Environment.getExternalStorageDirectory().getPath() + filename);
-                FileInputStream fIn = new FileInputStream(myFile);
-                BufferedReader myReader = new BufferedReader(
-                        new InputStreamReader(fIn));
-                String strline = "";
-                StringBuffer stringBuffer = new StringBuffer();
-                while ((strline = myReader.readLine()) != null) {
-                    result = result + strline + "\n";
-                }
-                myReader.close();
+
+        File extStore = Environment.getExternalStorageDirectory();
+        String path = extStore.getAbsolutePath() + "/" + filename;
+        Log.i("ExternalStorageDemo", "Read file: " + path);
+
+        String s = "";
+        String fileContent = "";
+        try {
+            File myFile = new File(path);
+            FileInputStream fIn = new FileInputStream(myFile);
+            BufferedReader myReader = new BufferedReader(
+                    new InputStreamReader(fIn));
+
+            while ((s = myReader.readLine()) != null) {
+                fileContent += s + "\n";
             }
-        } catch (Exception e) {
-            Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
+            myReader.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return result;
+        return fileContent;
+
     }
 
 
-    public void filewriter(File file, String text) {
-        try {
-            FileOutputStream fileOutput = new FileOutputStream(file);
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutput);
-            outputStreamWriter.write(text);
-            outputStreamWriter.flush();
-            fileOutput.getFD().sync();
-            outputStreamWriter.close();
-        } catch (Exception e) {
+    public void filewriter(String name, String text) {
+        if (isExternalStorageWritable()) {
+            try {
+                File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + name);
+                FileOutputStream fileOutput = new FileOutputStream(file);
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutput);
+                outputStreamWriter.write(text);
+                outputStreamWriter.flush();
+                outputStreamWriter.close();
+            } catch (IOException e) {
+                Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
+            }
+        }
+        else {
             Toast.makeText(MainActivity.this, "Lost connection", Toast.LENGTH_SHORT).show();
         }
+
 
     }
 }

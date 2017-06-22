@@ -2,16 +2,24 @@ package com.example.asus.myapplication;
 
 
 public class Data {
-    private String barcode, article, name;
-    private int count, count_db, code;
+    private int count,article, count_db;
+    private String barcode, code, name;
     private double price;
 
-    public double getPrice() {
-        return price;
+    public int getArticle() {
+        return article;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public void setArticle(int article) {
+        this.article = article;
+    }
+
+    public int getCount_db() {
+        return count_db;
+    }
+
+    public void setCount_db(int count_db) {
+        this.count_db = count_db;
     }
 
     public String getBarcode() {
@@ -22,28 +30,20 @@ public class Data {
         this.barcode = barcode;
     }
 
-    public String getArticle() {
-        return article;
-    }
-
-    public void setArticle(String article) {
-        this.article = article;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public void setCount(int count) {
-        this.count = count;
-    }
-
-    public int getCode() {
+    public String getCode() {
         return code;
     }
 
-    public void setCode(int code) {
+    public void setCode(String code) {
         this.code = code;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
     }
 
     public String getName() {
@@ -54,11 +54,37 @@ public class Data {
         this.name = name;
     }
 
-    public int getCount_db() {
-        return count_db;
+    public int getCount() {
+        return count;
     }
 
-    public void setCount_db(int count_db) {
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public Data(int count, String name, double price, int count_db) {
+        this.count = count;
+        this.name = name;
+        this.price = price;
         this.count_db = count_db;
+    }
+
+    public Data() {
+    }
+
+    public Data(String name,  int article, String barcode,
+                String code, int count,
+                int count_db, double price) {
+        this.count = count;
+        this.article = article;
+        this.count_db = count_db;
+        this.barcode = barcode;
+        this.code = code;
+        this.name = name;
+        this.price = price;
+    }
+
+    public Data(String name) {
+        this.name = name;
     }
 }
