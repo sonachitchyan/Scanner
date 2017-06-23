@@ -10,6 +10,10 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -36,9 +40,8 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
 
     private RadioButton radio_barcode, radio_code, radio_article;
-    private Button clear, add;
     private EditText barcode, count;
-    private TextView name_text, count_text, value_text;
+    private TextView name_text, count_text, value_text,code_text;
     private String hints[] = {"Barcode"};
     private BroadcastReceiver receiver;
     Gson gs = new Gson();
@@ -58,12 +61,15 @@ public class MainActivity extends AppCompatActivity {
         radio_code = (RadioButton) findViewById(R.id.radio_code);
         barcode = (EditText) findViewById(R.id.barcode);
         count = (EditText) findViewById(R.id.count);
-        clear = (Button) findViewById(R.id.clear);
-        add = (Button) findViewById(R.id.add);
         name_text = (TextView) findViewById(R.id.name_text);
         count_text = (TextView) findViewById(R.id.count_text);
         value_text = (TextView) findViewById(R.id.value_text);
+        code_text = (TextView) findViewById(R.id.code_text);
         dataList1 = new ArrayList<>();
+
+        if (getIntent().getBooleanExtra("cleared", false)){
+            dataList1 = new ArrayList<>();
+        }
 
         filewriter("export.txt", "");
         if (!db.isEmpty()){
@@ -81,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
                 if (hints[0].equals("Barcode")) {
                     if ("ok".equals(status) && hints[0].equals("Barcode")) {
                         barcode.setText(intent.getStringExtra("SCAN_BARCODE1"));
+                        count.requestFocus();
                     } else {
                         Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show();
                         barcode.setText("");
@@ -91,27 +98,29 @@ public class MainActivity extends AppCompatActivity {
 
         this.registerReceiver(receiver, intentfilter);
 
+        count.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN){
+                    Reader reader = new Reader();
+                    reader.execute();
+                    return true;
+                }
+                return false;
+            }
+        });
+        barcode.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN){
+                    Async async = new Async();
+                    async.execute();
+                    return true;
+                }
+                return false;
+            }
+        });
 
-        add.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Reader reader = new Reader();
-                reader.execute();
-            }
-        });
-        clear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dataList1.clear();
-                db.makeAllZero();
-                barcode.setText("");
-                count.setText("");
-                name_text.setText("");
-                count_text.setText("");
-                value_text.setText("");
-                Toast.makeText(MainActivity.this, "Ready", Toast.LENGTH_SHORT).show();
-            }
-        });
 
         radio_barcode.setChecked(true);
         count.setCursorVisible(false);
@@ -153,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             if (db.isEmpty()) {
-                String text = filereader("import1_2000.txt");
+                String text = filereader("import_main.txt");
                 JsonReader jsonReader = new JsonReader(new StringReader(text));
                 jsonReader.setLenient(true);
                 dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
@@ -172,64 +181,86 @@ public class MainActivity extends AppCompatActivity {
                 switch (hints[0]) {
                     case "Barcode":
                         data = db.getInfoByBarcode(barcode.getText().toString());
-                        temp = data.getCount();
-                        if (def) {
-                            temp++;
-                        } else {
-                            temp += Integer.parseInt(count.getText().toString());
+                        if (data!=null) {
+                            temp = data.getCount();
+                            if (def) {
+                                temp++;
+                            } else {
+                                temp += Integer.parseInt(count.getText().toString());
+                            }
+                        }
+                        else {
+                            Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                         }
                         break;
                     case "Code":
                         data = db.getInfoByCode(barcode.getText().toString());
-                        temp = data.getCount();
-                        if (def) {
-                            temp++;
-                        } else {
-                            temp += Integer.parseInt(count.getText().toString());
+                        if (data!=null) {
+                            temp = data.getCount();
+                            if (def) {
+                                temp++;
+                            } else {
+                                temp += Integer.parseInt(count.getText().toString());
+                            }
+                        }
+                        else {
+                            Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                         }
                         break;
                     case "Article":
                         data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
-                        temp = data.getCount();
-                        if (def) {
-                            temp++;
-                        } else {
-                            temp += Integer.parseInt(count.getText().toString());
+                        if (data!=null) {
+                            temp = data.getCount();
+                            if (def) {
+                                temp++;
+                            } else {
+                                temp += Integer.parseInt(count.getText().toString());
+                            }
+                        }
+                        else {
+                            Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                         }
                         break;
                 }
-                data.setCount(temp);
-                boolean ex = false;
-                if (dataList1.isEmpty()) {
-                    dataList1.add(data);
-                } else {
-                    for (Data d : dataList1) {
-                        switch (hints[0]) {
-                            case "Barcode":
-                                if (d.getBarcode().equals(barcode.getText().toString())) {
-                                    d.setCount(temp);
-                                    ex = true;
-                                }
-                                break;
-                            case "Code":
-                                if (d.getCode().equals(barcode.getText().toString())) {
-                                    d.setCount(temp);
-                                    ex = true;
-                                }
-                                break;
-                            case "Article":
-                                if (String.valueOf(d.getArticle()).equals(barcode.getText().toString())) {
-                                    d.setCount(temp);
-                                    ex = true;
-                                }
-                                break;
-                        }
-
-                    }
-                    if (!ex) {
+                if (data!=null) {
+                    data.setCount(temp);
+                    boolean ex = false;
+                    if (dataList1.isEmpty()) {
                         dataList1.add(data);
+                    } else {
+                        for (Data d : dataList1) {
+                            switch (hints[0]) {
+                                case "Barcode":
+                                    if (d.getBarcode().equals(barcode.getText().toString())) {
+                                        d.setCount(temp);
+                                        ex = true;
+                                    }
+                                    break;
+                                case "Code":
+                                    if (d.getCode().equals(barcode.getText().toString())) {
+                                        d.setCount(temp);
+                                        ex = true;
+                                    }
+                                    break;
+                                case "Article":
+                                    if (String.valueOf(d.getArticle()).equals(barcode.getText().toString())) {
+                                        d.setCount(temp);
+                                        ex = true;
+                                    }
+                                    break;
+                            }
+
+                        }
+                        if (!ex) {
+                            dataList1.add(data);
+                        }
                     }
                 }
+                else {
+                    barcode.setText("");
+                    count.setText("");
+                }
+
             }
 
         }
@@ -238,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.MILLISECONDS.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -248,26 +279,31 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if (!barcode.getText().toString().equals("")) {
-                switch (hints[0]) {
-                    case "Barcode":
-                        db.updateInfoByBarcode(data);
-                        break;
-                    case "Code":
-                        db.updateInfoByCode(data);
-                        break;
-                    case "Article":
-                        db.updateInfoByArticle(data);
-                        break;
+            if (data != null) {
+                if (!barcode.getText().toString().equals("")) {
+                    switch (hints[0]) {
+                        case "Barcode":
+                            db.updateInfoByBarcode(data);
+                            break;
+                        case "Code":
+                            db.updateInfoByCode(data);
+                            break;
+                        case "Article":
+                            db.updateInfoByArticle(data);
+                            break;
+                    }
+                    name_text.setText(data.getName());
+                    count_text.setText(data.getCount() + "/" + data.getCount_db());
+                    value_text.setText(String.valueOf(data.getPrice()));
+                    code_text.setText(String.valueOf(data.getCode()));
+                    String info = gs.toJson(dataList1);
+                    filewriter("export.txt", info);
+                    barcode.setText("");
+                    count.setText("");
+                    barcode.requestFocus();
+                } else {
+                    Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
                 }
-                name_text.setText(data.getName());
-                count_text.setText(data.getCount() + "/" + data.getCount_db());
-                value_text.setText(String.valueOf(data.getPrice()));
-                String info = gs.toJson(dataList1);
-                filewriter("export.txt", info);
-            }
-            else {
-                Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -289,32 +325,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public String filereader(String filename) {
+
+        public String filereader(String filename) {
+            File extStore = Environment.getExternalStorageDirectory();
+            String path = extStore.getAbsolutePath() + "/" + filename;
+            Log.i("ExternalStorageDemo", "Read file: " + path);
 
 
-        File extStore = Environment.getExternalStorageDirectory();
-        String path = extStore.getAbsolutePath() + "/" + filename;
-        Log.i("ExternalStorageDemo", "Read file: " + path);
+            String s = "";
+            String fileContent = "";
+            StringBuilder ss = new StringBuilder();
+            try {
+                File myFile = new File(path);
+                FileInputStream fIn = new FileInputStream(myFile);
+                BufferedReader myReader = new BufferedReader(
+                        new InputStreamReader(fIn));
 
-        String s = "";
-        String fileContent = "";
-        try {
-            File myFile = new File(path);
-            FileInputStream fIn = new FileInputStream(myFile);
-            BufferedReader myReader = new BufferedReader(
-                    new InputStreamReader(fIn));
-
-            while ((s = myReader.readLine()) != null) {
-                fileContent += s + "\n";
+                while ((s = myReader.readLine()) != null) {
+                    ss.append(s);
+                }
             }
-            myReader.close();
+            catch (Exception e) {
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            }
+            fileContent = ss.toString();
+            return fileContent;
+
         }
-        return fileContent;
 
-    }
+
 
 
     public void filewriter(String name, String text) {
@@ -335,5 +374,44 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
+
+    }
+    class Async extends AsyncTask<Void, Void, Void>{
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            count.requestFocus();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id){
+            case R.id.listofitems:
+                Intent intent = new Intent(MainActivity.this, Main2Activity.class);
+                String info = gs.toJson(dataList1);
+                intent.putExtra("data", info);
+                startActivity(intent);
+               return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

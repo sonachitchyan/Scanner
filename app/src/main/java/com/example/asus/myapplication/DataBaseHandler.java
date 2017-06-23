@@ -72,10 +72,11 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_COUNT_DB,
                 KEY_PRICE
         }, KEY_BARCODE + "=?", new String[]{ barcode}, null, null, null);
-        if (cursor != null) {
+        if (cursor != null && cursor.getCount()>0) {
             cursor.moveToFirst();
         }
-        else{
+
+        else {
             return null;
         }
         Data data = new Data(cursor.getString(0),
@@ -101,6 +102,9 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         }, KEY_CODE + "=?", new String[]{ code}, null, null, null);
         if (cursor != null) {
             cursor.moveToFirst();
+        }
+        else if (cursor.getCount()==0){
+            return null;
         }
         else {
             return null;
@@ -128,6 +132,9 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         }, KEY_ARTICLE + "=?", new String[]{ String.valueOf(article)}, null, null, null);
         if (cursor != null) {
             cursor.moveToFirst();
+        }
+        else if (cursor.getCount()==0){
+            return null;
         }
         else {
             return null;
@@ -217,5 +224,9 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=0";
         db.execSQL(query);
+    }
+    public boolean exists(Data d){
+
+        return true;
     }
 }
