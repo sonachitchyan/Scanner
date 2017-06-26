@@ -32,7 +32,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_CODE + " TEXT NOT NULL, " +
                 KEY_COUNT + " INTEGER NOT NULL, " +
                 KEY_COUNT_DB + " INTEGER NOT NULL, " +
-                KEY_PRICE + " DOUBLE NOT NULL" + ");";
+                KEY_PRICE + "INTEGER NOT NULL" + ");";
         db.execSQL(CREATE_CONTACTS_TABLE);
 
     }
@@ -85,7 +85,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(3),
                 cursor.getInt(4),
                 cursor.getInt(5),
-               cursor.getDouble(6));
+               cursor.getInt(6));
         return data;
     }
 
@@ -116,7 +116,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(3),
                 cursor.getInt(4),
                 cursor.getInt(5),
-                cursor.getDouble(6));
+                cursor.getInt(6));
         return data;
     }
     public Data getInfoByArticle(int article) {
@@ -146,7 +146,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(3),
                 cursor.getInt(4),
                 cursor.getInt(5),
-                cursor.getDouble(6));
+                cursor.getInt(6));
         return data;
     }
     public int updateInfoByBarcode(Data data) {
@@ -207,7 +207,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 data.setCode(cursor.getString(3));
                 data.setCount(cursor.getInt(4));
                 data.setCount_db(cursor.getInt(5));
-                data.setPrice(cursor.getDouble(6));
+                data.setPrice(cursor.getInt(6));
 
                 dataList.add(data);
             } while (cursor.moveToNext());

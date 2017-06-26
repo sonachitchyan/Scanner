@@ -12,10 +12,8 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -39,9 +37,9 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RadioButton radio_barcode, radio_code, radio_article;
+    private RadioButton radio_barcode;
     private EditText barcode, count;
-    private TextView name_text, count_text, value_text,code_text;
+    private TextView name_text, result_text, price_text;
     private String hints[] = {"Barcode"};
     private BroadcastReceiver receiver;
     Gson gs = new Gson();
@@ -50,49 +48,65 @@ public class MainActivity extends AppCompatActivity {
     List<Data> dataList, dataList1;
 
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        radio_article = (RadioButton) findViewById(R.id.radio_article);
         radio_barcode = (RadioButton) findViewById(R.id.radio_barcode);
-        radio_code = (RadioButton) findViewById(R.id.radio_code);
         barcode = (EditText) findViewById(R.id.barcode);
         count = (EditText) findViewById(R.id.count);
         name_text = (TextView) findViewById(R.id.name_text);
-        count_text = (TextView) findViewById(R.id.count_text);
-        value_text = (TextView) findViewById(R.id.value_text);
-        code_text = (TextView) findViewById(R.id.code_text);
+        result_text = (TextView) findViewById(R.id.results);
+        price_text = (TextView) findViewById(R.id.price_text);
         dataList1 = new ArrayList<>();
 
-        if (getIntent().getBooleanExtra("cleared", false)){
+        if (getIntent().getBooleanExtra("cleared", false)) {
             dataList1 = new ArrayList<>();
         }
 
         filewriter("export.txt", "");
-        if (!db.isEmpty()){
+        if (!db.isEmpty()) {
             db.deletAll();
         }
-
-
-
 
 
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 final String status = intent.getStringExtra("SCAN_STATE");
+                String bar = "";
                 if (hints[0].equals("Barcode")) {
                     if ("ok".equals(status) && hints[0].equals("Barcode")) {
-                        barcode.setText(intent.getStringExtra("SCAN_BARCODE1"));
+                        bar = intent.getStringExtra("SCAN_BARCODE1");
+                        barcode.setText(bar);
                         count.requestFocus();
+                        if (db.isEmpty()){
+                            String text = filereader("import_main.txt");
+                            JsonReader jsonReader = new JsonReader(new StringReader(text));
+                            jsonReader.setLenient(true);
+                            dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
+                            }.getType());
+                            for (Data d : dataList) {
+                                d.setCount(0);
+                                db.addInfo(d);
+                            }
+                        }
+                        else {
+                            dataList = db.getAllInfo();
+                        }
+                        for (Data d : dataList) {
+                            if (d.getBarcode().equals(bar)){
+                                name_text.setText(d.getName());
+                                price_text.setText(String.valueOf(d.getPrice()));
+                            }
+                        }
+
                     } else {
                         Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show();
                         barcode.setText("");
                     }
                 }
+
             }
         };
 
@@ -101,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         count.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN){
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
                     Reader reader = new Reader();
                     reader.execute();
                     return true;
@@ -112,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         barcode.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN){
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
                     Async async = new Async();
                     async.execute();
                     return true;
@@ -161,17 +175,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            if (db.isEmpty()) {
-                String text = filereader("import_main.txt");
-                JsonReader jsonReader = new JsonReader(new StringReader(text));
-                jsonReader.setLenient(true);
-                dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
-                }.getType());
-                for (Data d : dataList) {
-                    d.setCount(0);
-                    db.addInfo(d);
-                }
-            }
             boolean def = false;
             if (count.getText().toString().equals("")) {
                 def = true;
@@ -181,48 +184,45 @@ public class MainActivity extends AppCompatActivity {
                 switch (hints[0]) {
                     case "Barcode":
                         data = db.getInfoByBarcode(barcode.getText().toString());
-                        if (data!=null) {
+                        if (data != null) {
                             temp = data.getCount();
                             if (def) {
                                 temp++;
                             } else {
                                 temp += Integer.parseInt(count.getText().toString());
                             }
-                        }
-                        else {
+                        } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                         }
                         break;
                     case "Code":
                         data = db.getInfoByCode(barcode.getText().toString());
-                        if (data!=null) {
+                        if (data != null) {
                             temp = data.getCount();
                             if (def) {
                                 temp++;
                             } else {
                                 temp += Integer.parseInt(count.getText().toString());
                             }
-                        }
-                        else {
+                        } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                         }
                         break;
                     case "Article":
                         data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
-                        if (data!=null) {
+                        if (data != null) {
                             temp = data.getCount();
                             if (def) {
                                 temp++;
                             } else {
                                 temp += Integer.parseInt(count.getText().toString());
                             }
-                        }
-                        else {
+                        } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                         }
                         break;
                 }
-                if (data!=null) {
+                if (data != null) {
                     data.setCount(temp);
                     boolean ex = false;
                     if (dataList1.isEmpty()) {
@@ -255,8 +255,7 @@ public class MainActivity extends AppCompatActivity {
                             dataList1.add(data);
                         }
                     }
-                }
-                else {
+                } else {
                     barcode.setText("");
                     count.setText("");
                 }
@@ -293,9 +292,9 @@ public class MainActivity extends AppCompatActivity {
                             break;
                     }
                     name_text.setText(data.getName());
-                    count_text.setText(data.getCount() + "/" + data.getCount_db());
-                    value_text.setText(String.valueOf(data.getPrice()));
-                    code_text.setText(String.valueOf(data.getCode()));
+                    result_text.setText(data.getCode() +"\n" + "\n" +
+                    data.getCount() + "/" + data.getCount_db());
+                    price_text.setText(String.valueOf(data.getPrice()));
                     String info = gs.toJson(dataList1);
                     filewriter("export.txt", info);
                     barcode.setText("");
@@ -325,35 +324,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public String filereader(String filename) {
+        File extStore = Environment.getExternalStorageDirectory();
+        String path = extStore.getAbsolutePath() + "/" + filename;
+        Log.i("ExternalStorageDemo", "Read file: " + path);
 
-        public String filereader(String filename) {
-            File extStore = Environment.getExternalStorageDirectory();
-            String path = extStore.getAbsolutePath() + "/" + filename;
-            Log.i("ExternalStorageDemo", "Read file: " + path);
 
+        String s = "";
+        String fileContent = "";
+        StringBuilder ss = new StringBuilder();
+        try {
+            File myFile = new File(path);
+            FileInputStream fIn = new FileInputStream(myFile);
+            BufferedReader myReader = new BufferedReader(
+                    new InputStreamReader(fIn));
 
-            String s = "";
-            String fileContent = "";
-            StringBuilder ss = new StringBuilder();
-            try {
-                File myFile = new File(path);
-                FileInputStream fIn = new FileInputStream(myFile);
-                BufferedReader myReader = new BufferedReader(
-                        new InputStreamReader(fIn));
-
-                while ((s = myReader.readLine()) != null) {
-                    ss.append(s);
-                }
+            while ((s = myReader.readLine()) != null) {
+                ss.append(s);
             }
-            catch (Exception e) {
-
-            }
-            fileContent = ss.toString();
-            return fileContent;
+        } catch (Exception e) {
 
         }
+        fileContent = ss.toString();
+        return fileContent;
 
-
+    }
 
 
     public void filewriter(String name, String text) {
@@ -368,15 +363,14 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
             }
-        }
-        else {
+        } else {
             Toast.makeText(MainActivity.this, "Lost connection", Toast.LENGTH_SHORT).show();
         }
 
 
-
     }
-    class Async extends AsyncTask<Void, Void, Void>{
+
+    class Async extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
@@ -403,13 +397,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        switch (id){
+        switch (id) {
             case R.id.listofitems:
                 Intent intent = new Intent(MainActivity.this, Main2Activity.class);
                 String info = gs.toJson(dataList1);
                 intent.putExtra("data", info);
                 startActivity(intent);
-               return true;
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

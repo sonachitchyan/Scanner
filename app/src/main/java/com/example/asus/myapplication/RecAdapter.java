@@ -46,4 +46,8 @@ public class RecAdapter extends RecyclerView.Adapter<RecAdapter.MyViewHolder> {
             final_price = (TextView) itemView.findViewById(R.id.final_price);
         }
     }
+
+    public void setDataList(List<Data> dataList) {
+        this.dataList = dataList;
+    }
 }

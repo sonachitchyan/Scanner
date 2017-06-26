@@ -12,6 +12,7 @@
     <string name="Clear">մաքրել</string>
     <string name="name">անուն</string>
     <string name="count_count_base">առկա/բազա</string>
-    <string name="price">գին</string>
+    <string name="price">Գին</string>
+    <string name="info">Կոդ"\n""\n"Քանակ</string>
 
 </resources>

@@ -2,9 +2,9 @@ package com.example.asus.myapplication;
 
 
 public class Data {
-    private int count,article, count_db;
+    private int count,article, count_db, price;
     private String barcode, code, name;
-    private double price;
+
 
     public int getArticle() {
         return article;
@@ -38,11 +38,11 @@ public class Data {
         this.code = code;
     }
 
-    public double getPrice() {
+    public int getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(int price) {
         this.price = price;
     }
 
@@ -62,7 +62,7 @@ public class Data {
         this.count = count;
     }
 
-    public Data(int count, String name, double price, int count_db) {
+    public Data(int count, String name, int price, int count_db) {
         this.count = count;
         this.name = name;
         this.price = price;
@@ -74,7 +74,7 @@ public class Data {
 
     public Data(String name,  int article, String barcode,
                 String code, int count,
-                int count_db, double price) {
+                int count_db, int price) {
         this.count = count;
         this.article = article;
         this.count_db = count_db;
