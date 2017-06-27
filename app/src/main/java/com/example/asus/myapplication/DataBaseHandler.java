@@ -225,8 +225,22 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=0";
         db.execSQL(query);
     }
-    public boolean exists(Data d){
-
-        return true;
+    public void changeCountForBarcode(String barcode, int count){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=" + count +" WHERE " +
+                KEY_BARCODE + "='" + barcode + "';";
+        db.execSQL(query);
+    }
+    public void changeCountForCode(String code, int count){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=" + count +" WHERE " +
+                KEY_CODE + "='" + code + "';";
+        db.execSQL(query);
+    }
+    public void changeCountForArticle(int article, int count){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "= " + count + " WHERE " +
+                KEY_ARTICLE + "=" + article + ";";
+        db.execSQL(query);
     }
 }
