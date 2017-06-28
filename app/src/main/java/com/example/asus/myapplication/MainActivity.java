@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
             dataList1 = new ArrayList<>();
         }
 
+
         filewriter("export.txt", "");
         if (!db.isEmpty()) {
             db.deletAll();
@@ -128,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
         undo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                BREAKING_POINT:
                 if (temp_data!=null){
                     for (Data d: dataList1){
                         if (d.getBarcode().equals(temp_data.getBarcode())){
@@ -135,18 +137,21 @@ public class MainActivity extends AppCompatActivity {
                             t-= temp_data.getCount();
                             d.setCount(t);
                             db.changeCountForBarcode(d.getBarcode(), t);
+                            break BREAKING_POINT;
                         }
                         else if (d.getCode().equals(temp_data.getCode())){
                             int t = d.getCount();
                             t-= temp_data.getCount();
                             d.setCount(t);
                             db.changeCountForCode(d.getCode(), t);
+                            break BREAKING_POINT;
                         }
                         else if (d.getArticle() == temp_data.getArticle()){
                             int t = d.getCount();
                             t-=temp_data.getCount();
                             d.setCount(t);
                             db.changeCountForArticle(d.getArticle(), t);
+                            break BREAKING_POINT;
                         }
                     }
                 }
@@ -462,6 +467,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
             dataList = db.getAllInfo();
-
     }
 }

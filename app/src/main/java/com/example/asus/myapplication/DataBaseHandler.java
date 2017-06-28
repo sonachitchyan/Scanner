@@ -23,23 +23,26 @@ public class DataBaseHandler extends SQLiteOpenHelper {
     private static final String KEY_COUNT_DB = "count_db";
     private static final String KEY_NAME = "name";
     private static final String KEY_PRICE = "price";
+    private static final String SQL_DELETE_ENTRIES =
+            "DROP TABLE IF EXISTS info;";
     @Override
     public void onCreate(SQLiteDatabase db) {
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABlE_NAME + "("
                  + KEY_NAME + " TEXT NOT NULL,"
-                + KEY_ARTICLE + " INTEGER NOT NULL, " +
-                KEY_BARCODE + " TEXT NOT NULL, " +
-                KEY_CODE + " TEXT NOT NULL, " +
+                + KEY_ARTICLE + " INTEGER PRIMARY KEY NOT NULL, " +
+                KEY_BARCODE + " TEXT PRIMARY KEY NOT NULL, " +
+                KEY_CODE + " TEXT PRIMARY KEY NOT NULL, " +
                 KEY_COUNT + " INTEGER NOT NULL, " +
                 KEY_COUNT_DB + " INTEGER NOT NULL, " +
-                KEY_PRICE + "INTEGER NOT NULL" + ");";
+                KEY_PRICE + " INTEGER NOT NULL" + ");";
         db.execSQL(CREATE_CONTACTS_TABLE);
 
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        db.execSQL(SQL_DELETE_ENTRIES);
+        onCreate(db);
     }
 
     public DataBaseHandler(Context context) {
@@ -71,7 +74,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_COUNT,
                 KEY_COUNT_DB,
                 KEY_PRICE
-        }, KEY_BARCODE + "=?", new String[]{ barcode}, null, null, null);
+        }, KEY_BARCODE + "=?", new String[]{barcode}, null, null, null);
         if (cursor != null && cursor.getCount()>0) {
             cursor.moveToFirst();
         }
