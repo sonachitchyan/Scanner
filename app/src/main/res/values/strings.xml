@@ -14,5 +14,9 @@
     <string name="count_count_base">առկա/բազա</string>
     <string name="price">Գին</string>
     <string name="info">Կոդ"\n""\n"Քանակ</string>
+    <string name="file_name">փաստաթղթի համար</string>
+    <string name="terminal">Տեռմինալ համար...</string>
+    <string name="input">Մուտքագրել</string>
+    <string name="Zero">զրոյացնել</string>
 
 </resources>

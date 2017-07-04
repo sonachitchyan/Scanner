@@ -29,8 +29,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABlE_NAME + "("
                  + KEY_NAME + " TEXT NOT NULL,"
-                + KEY_ARTICLE + " INTEGER PRIMARY KEY NOT NULL, " +
-                KEY_BARCODE + " TEXT PRIMARY KEY NOT NULL, " +
+                + KEY_ARTICLE + " INTEGER NOT NULL, " +
+                KEY_BARCODE + " TEXT NOT NULL, " +
                 KEY_CODE + " TEXT PRIMARY KEY NOT NULL, " +
                 KEY_COUNT + " INTEGER NOT NULL, " +
                 KEY_COUNT_DB + " INTEGER NOT NULL, " +
@@ -225,7 +225,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
 
     public void makeAllZero() {
         SQLiteDatabase db = this.getWritableDatabase();
-        String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=0";
+        String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=0;";
         db.execSQL(query);
     }
     public void changeCountForBarcode(String barcode, int count){

@@ -39,9 +39,9 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
 
     private RadioButton radio_barcode;
-    private EditText barcode, count;
+    private EditText barcode, count, number;
     private TextView name_text, result_text, price_text;
-    private Button undo;
+    private Button undo, zero;
     private String hints[] = {"Barcode"};
     private BroadcastReceiver receiver;
     Data temp_data;
@@ -49,6 +49,10 @@ public class MainActivity extends AppCompatActivity {
     IntentFilter intentfilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
     DataBaseHandler db = new DataBaseHandler(this);
     List<Data> dataList, dataList1;
+    String client;
+    String ex_client;
+    String prefix;
+
 
 
     @Override
@@ -57,22 +61,37 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         radio_barcode = (RadioButton) findViewById(R.id.radio_barcode);
         barcode = (EditText) findViewById(R.id.barcode);
+        number = (EditText) findViewById(R.id.file_name);
         count = (EditText) findViewById(R.id.count);
         name_text = (TextView) findViewById(R.id.name_text);
         result_text = (TextView) findViewById(R.id.results);
         undo = (Button) findViewById(R.id.undo);
         price_text = (TextView) findViewById(R.id.price_text);
         dataList1 = new ArrayList<>();
+        zero = (Button) findViewById(R.id.zero);
+        prefix = getIntent().getStringExtra("prefix");
+
 
         if (getIntent().getBooleanExtra("cleared", false)) {
             dataList1 = new ArrayList<>();
         }
 
 
-        filewriter("export.txt", "");
         if (!db.isEmpty()) {
             db.deletAll();
         }
+        number.requestFocus();
+         number.setOnKeyListener(new View.OnKeyListener() {
+             @Override
+             public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                 if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
+                     ex_client = number.getText().toString();
+                     barcode.requestFocus();
+                     return true;
+                 }
+                 return false;
+             }
+         });
 
 
         receiver = new BroadcastReceiver() {
@@ -84,14 +103,8 @@ public class MainActivity extends AppCompatActivity {
                     if ("ok".equals(status) && hints[0].equals("Barcode")) {
                         bar = intent.getStringExtra("SCAN_BARCODE1");
                         barcode.setText(bar);
-                        count.requestFocus();
-                        fillData();
-                        for (Data d : dataList) {
-                            if (d.getBarcode().equals(bar)){
-                                name_text.setText(d.getName());
-                                price_text.setText(String.valueOf(d.getPrice()));
-                            }
-                        }
+                        Async async = new Async();
+                        async.execute();
 
                     } else {
                         Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show();
@@ -126,6 +139,22 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+        zero.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                number.setText("");
+                barcode.setText("");
+                count.setText("");
+                dataList1 = new ArrayList<Data>();
+                db.makeAllZero();
+                name_text.setText("");
+                price_text.setText("");
+                result_text.setText("");
+            }
+        });
+
+
         undo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -137,20 +166,10 @@ public class MainActivity extends AppCompatActivity {
                             t-= temp_data.getCount();
                             d.setCount(t);
                             db.changeCountForBarcode(d.getBarcode(), t);
-                            break BREAKING_POINT;
-                        }
-                        else if (d.getCode().equals(temp_data.getCode())){
-                            int t = d.getCount();
-                            t-= temp_data.getCount();
-                            d.setCount(t);
-                            db.changeCountForCode(d.getCode(), t);
-                            break BREAKING_POINT;
-                        }
-                        else if (d.getArticle() == temp_data.getArticle()){
-                            int t = d.getCount();
-                            t-=temp_data.getCount();
-                            d.setCount(t);
-                            db.changeCountForArticle(d.getArticle(), t);
+                            name_text.setText(temp_data.getName());
+                            result_text.setText(d.getCode() + "\n" + "\n" +
+                            d.getCount() + "/" + d.getCount_db());
+                            price_text.setText(String.valueOf(d.getPrice()));
                             break BREAKING_POINT;
                         }
                     }
@@ -158,9 +177,6 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     Toast.makeText(MainActivity.this, "Ոչինչ մուտքագրված չէ", Toast.LENGTH_SHORT).show();
                 }
-                name_text.setText("");
-                result_text.setText("");
-                price_text.setText("");
             }
         });
 
@@ -168,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
         radio_barcode.setChecked(true);
         count.setCursorVisible(false);
         barcode.setCursorVisible(false);
+        number.setCursorVisible(false);
 
     }
 
@@ -334,7 +351,8 @@ public class MainActivity extends AppCompatActivity {
                     data.getCount() + "/" + data.getCount_db());
                     price_text.setText(String.valueOf(data.getPrice()));
                     String info = gs.toJson(dataList1);
-                    filewriter("export.txt", info);
+                    String file_path_name = prefix + ex_client;
+                    filewriter(file_path_name + "export.json", info);
                     barcode.setText("");
                     count.setText("");
                     barcode.requestFocus();
@@ -396,7 +414,7 @@ public class MainActivity extends AppCompatActivity {
                 outputStreamWriter.flush();
                 outputStreamWriter.close();
             } catch (IOException e) {
-                Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Problem occurred", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(MainActivity.this, "Lost connection", Toast.LENGTH_SHORT).show();
@@ -409,16 +427,22 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            count.requestFocus();
+
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
             fillData();
             for (Data d: dataList){
                 if (d.getBarcode().equals(barcode.getText().toString())){
                     name_text.setText(d.getName());
                     price_text.setText(String.valueOf(d.getPrice()));
+                    result_text.setText(d.getCode() + "\n" +"\n" + d.getCount() +"/" + d.getCount_db());
                     break;
                 }
             }
-            count.requestFocus();
-
         }
 
         @Override
@@ -456,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void fillData(){
         if (db.isEmpty()){
-            String text = filereader("import_main.txt");
+            String text = filereader("import_main.json");
             JsonReader jsonReader = new JsonReader(new StringReader(text));
             jsonReader.setLenient(true);
             dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
