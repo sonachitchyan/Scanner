@@ -29,12 +29,12 @@ public class DataBaseHandler extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABlE_NAME + "("
                  + KEY_NAME + " TEXT NOT NULL,"
-                + KEY_ARTICLE + " INTEGER NOT NULL, " +
+                + KEY_ARTICLE + " TEXT NOT NULL, " +
                 KEY_BARCODE + " TEXT NOT NULL, " +
                 KEY_CODE + " TEXT PRIMARY KEY NOT NULL, " +
                 KEY_COUNT + " INTEGER NOT NULL, " +
-                KEY_COUNT_DB + " INTEGER NOT NULL, " +
-                KEY_PRICE + " INTEGER NOT NULL" + ");";
+                KEY_COUNT_DB + " DOUBLE NOT NULL, " +
+                KEY_PRICE + " DOUBLE NOT NULL" + ");";
         db.execSQL(CREATE_CONTACTS_TABLE);
 
     }
@@ -83,12 +83,12 @@ public class DataBaseHandler extends SQLiteOpenHelper {
             return null;
         }
         Data data = new Data(cursor.getString(0),
-                cursor.getInt(1),
+                cursor.getString(1),
                 cursor.getString(2),
                 cursor.getString(3),
                 cursor.getInt(4),
-                cursor.getInt(5),
-               cursor.getInt(6));
+                cursor.getDouble(5),
+               cursor.getDouble(6));
         return data;
     }
 
@@ -114,15 +114,15 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         }
 
         Data data = new Data(cursor.getString(0),
-                cursor.getInt(1),
+                cursor.getString(1),
                 cursor.getString(2),
                 cursor.getString(3),
                 cursor.getInt(4),
-                cursor.getInt(5),
-                cursor.getInt(6));
+                cursor.getDouble(5),
+                cursor.getDouble(6));
         return data;
     }
-    public Data getInfoByArticle(int article) {
+    public Data getInfoByArticle(String article) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.query(TABlE_NAME, new String[] {
                 KEY_NAME,
@@ -144,12 +144,12 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         }
 
         Data data = new Data(cursor.getString(0),
-                cursor.getInt(1),
+                cursor.getString(1),
                 cursor.getString(2),
                 cursor.getString(3),
                 cursor.getInt(4),
-                cursor.getInt(5),
-                cursor.getInt(6));
+                cursor.getDouble(5),
+                cursor.getDouble(6));
         return data;
     }
     public int updateInfoByBarcode(Data data) {
@@ -205,12 +205,12 @@ public class DataBaseHandler extends SQLiteOpenHelper {
             do {
                 Data data = new Data();
                 data.setName(cursor.getString(0));
-                data.setArticle(cursor.getInt(1));
+                data.setArticle(cursor.getString(1));
                 data.setBarcode(cursor.getString(2));
                 data.setCode(cursor.getString(3));
                 data.setCount(cursor.getInt(4));
-                data.setCount_db(cursor.getInt(5));
-                data.setPrice(cursor.getInt(6));
+                data.setCount_db(cursor.getDouble(5));
+                data.setPrice(cursor.getDouble(6));
 
                 dataList.add(data);
             } while (cursor.moveToNext());
@@ -240,10 +240,10 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_CODE + "='" + code + "';";
         db.execSQL(query);
     }
-    public void changeCountForArticle(int article, int count){
+    public void changeCountForArticle(String article, int count){
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "= " + count + " WHERE " +
-                KEY_ARTICLE + "=" + article + ";";
+                KEY_ARTICLE + "= '" + article + "';";
         db.execSQL(query);
     }
 }

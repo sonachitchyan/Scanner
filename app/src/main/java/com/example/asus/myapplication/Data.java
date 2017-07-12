@@ -2,23 +2,24 @@ package com.example.asus.myapplication;
 
 
 public class Data {
-    private int count,article, count_db, price;
-    private String barcode, code, name;
+    private int count;
+    private double price, count_db;
+    private String barcode, article, code, name;
 
 
-    public int getArticle() {
+    public String getArticle() {
         return article;
     }
 
-    public void setArticle(int article) {
+    public void setArticle(String article) {
         this.article = article;
     }
 
-    public int getCount_db() {
+    public double getCount_db() {
         return count_db;
     }
 
-    public void setCount_db(int count_db) {
+    public void setCount_db(double count_db) {
         this.count_db = count_db;
     }
 
@@ -38,11 +39,11 @@ public class Data {
         this.code = code;
     }
 
-    public int getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 
@@ -62,7 +63,7 @@ public class Data {
         this.count = count;
     }
 
-    public Data(int count, String name, int price, int count_db) {
+    public Data(int count, String name, double price, double count_db) {
         this.count = count;
         this.name = name;
         this.price = price;
@@ -72,9 +73,9 @@ public class Data {
     public Data() {
     }
 
-    public Data(String name,  int article, String barcode,
+    public Data(String name,  String  article, String barcode,
                 String code, int count,
-                int count_db, int price) {
+                double count_db, double price) {
         this.count = count;
         this.article = article;
         this.count_db = count_db;

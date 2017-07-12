@@ -4,9 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
@@ -49,9 +51,9 @@ public class MainActivity extends AppCompatActivity {
     IntentFilter intentfilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
     DataBaseHandler db = new DataBaseHandler(this);
     List<Data> dataList, dataList1;
-    String client;
     String ex_client;
     String prefix;
+    SharedPreferences sharedPreferences;
 
 
 
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         dataList1 = new ArrayList<>();
         zero = (Button) findViewById(R.id.zero);
         prefix = getIntent().getStringExtra("prefix");
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 
         if (getIntent().getBooleanExtra("cleared", false)) {
@@ -151,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
                 name_text.setText("");
                 price_text.setText("");
                 result_text.setText("");
+                number.requestFocus();
             }
         });
 
@@ -168,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                             db.changeCountForBarcode(d.getBarcode(), t);
                             name_text.setText(temp_data.getName());
                             result_text.setText(d.getCode() + "\n" + "\n" +
-                            d.getCount() + "/" + d.getCount_db());
+                            d.getCount());
                             price_text.setText(String.valueOf(d.getPrice()));
                             break BREAKING_POINT;
                         }
@@ -176,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else {
                     Toast.makeText(MainActivity.this, "Ոչինչ մուտքագրված չէ", Toast.LENGTH_SHORT).show();
+                    barcode.requestFocus();
                 }
             }
         });
@@ -261,8 +266,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case "Article":
-                        temp_data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
-                        data = db.getInfoByArticle(Integer.parseInt(barcode.getText().toString()));
+                        temp_data = db.getInfoByArticle(barcode.getText().toString());
+                        data = db.getInfoByArticle(barcode.getText().toString());
                         if (data != null) {
                             temp = data.getCount();
                             if (def) {
@@ -274,6 +279,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
+                            barcode.requestFocus();
                         }
                         break;
                 }
@@ -298,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                     break;
                                 case "Article":
-                                    if (String.valueOf(d.getArticle()).equals(barcode.getText().toString())) {
+                                    if (d.getArticle().equals(barcode.getText().toString())) {
                                         d.setCount(temp);
                                         ex = true;
                                     }
@@ -348,11 +354,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                     name_text.setText(data.getName());
                     result_text.setText(data.getCode() +"\n" + "\n" +
-                    data.getCount() + "/" + data.getCount_db());
+                    data.getCount());
                     price_text.setText(String.valueOf(data.getPrice()));
                     String info = gs.toJson(dataList1);
-                    String file_path_name = prefix + ex_client;
-                    filewriter(file_path_name + "export.json", info);
+                    String info_2 = forSergey(info);
+                    String file_path_name = prefix +"_"+ ex_client;
+                    filewriter(file_path_name + "export.txt", info_2);
                     barcode.setText("");
                     count.setText("");
                     barcode.requestFocus();
@@ -439,7 +446,7 @@ public class MainActivity extends AppCompatActivity {
                 if (d.getBarcode().equals(barcode.getText().toString())){
                     name_text.setText(d.getName());
                     price_text.setText(String.valueOf(d.getPrice()));
-                    result_text.setText(d.getCode() + "\n" +"\n" + d.getCount() +"/" + d.getCount_db());
+                    result_text.setText(d.getCode() + "\n" +"\n" + d.getCount());
                     break;
                 }
             }
@@ -491,5 +498,36 @@ public class MainActivity extends AppCompatActivity {
             }
         }
             dataList = db.getAllInfo();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (!sharedPreferences.getString("prefix", "").equals("")){
+            this.finishAffinity();
+        }
+    }
+    public String forSergey(String data){
+        String finall = "";
+        char[] d = data.toCharArray();
+        for (char dd:d){
+            finall = finall + dd;
+            if (dd == ','){
+                finall = finall + "\n";
+            }
+        }
+        return finall;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterReceiver(receiver);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(receiver, intentfilter);
     }
 }
