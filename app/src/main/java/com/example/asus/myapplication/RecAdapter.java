@@ -28,7 +28,7 @@ public class RecAdapter extends RecyclerView.Adapter<RecAdapter.MyViewHolder> {
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
         Data data = dataList.get(position);
-        holder.final_code.setText(data.getCode());
+        holder.final_code.setText(data.getBarcode());
         holder.final_count.setText(String.valueOf(data.getCount()));
         holder.final_price.setText(String.valueOf(data.getPrice()));
     }

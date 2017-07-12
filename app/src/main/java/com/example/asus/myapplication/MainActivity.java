@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
                         barcode.setText(bar);
                         Async async = new Async();
                         async.execute();
+                        count.requestFocus();
 
                     } else {
                         Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show();
@@ -165,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                 BREAKING_POINT:
                 if (temp_data!=null){
                     for (Data d: dataList1){
-                        if (d.getBarcode().equals(temp_data.getBarcode())){
+                        if (d.getBarcode().equals(temp_data.getBarcode()) && d.getCount()>=temp_data.getCount()){
                             int t = d.getCount();
                             t-= temp_data.getCount();
                             d.setCount(t);
@@ -179,8 +180,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 else {
-                    Toast.makeText(MainActivity.this, "Ոչինչ մուտքագրված չէ", Toast.LENGTH_SHORT).show();
-                    barcode.requestFocus();
+                    Toast.makeText(MainActivity.this, "Հրամանը սխալ է", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -359,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
                     String info = gs.toJson(dataList1);
                     String info_2 = forSergey(info);
                     String file_path_name = prefix +"_"+ ex_client;
-                    filewriter(file_path_name + "export.txt", info_2);
+                    filewriter(file_path_name + "export.json", info_2);
                     barcode.setText("");
                     count.setText("");
                     barcode.requestFocus();
@@ -435,7 +435,6 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             count.requestFocus();
-
         }
 
         @Override
@@ -513,7 +512,7 @@ public class MainActivity extends AppCompatActivity {
         for (char dd:d){
             finall = finall + dd;
             if (dd == ','){
-                finall = finall + "\n";
+                finall = finall + '\n';
             }
         }
         return finall;
