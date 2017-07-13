@@ -91,10 +91,19 @@ public class MainActivity extends AppCompatActivity {
              public boolean onKey(View view, int i, KeyEvent keyEvent) {
                  if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
                      ex_client = number.getText().toString();
-//                     if (new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/" + prefix + "_" + ex_client+"export.txt").exists()){
-//                         JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.txt")));
-//                         dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
-//                     }
+                     File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+prefix+"_"+ex_client+"export.json");
+                     if (file.exists()){
+                         JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.txt")));
+                         dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
+                         for(Data d: dataList1){
+                             db.updateInfoByBarcode(d);
+                             Toast.makeText(MainActivity.this, "" + d.getCount(), Toast.LENGTH_SHORT).show();
+                         }
+                     }
+                     else {
+                         dataList1 = new ArrayList<>();
+                         db.makeAllZero();
+                     }
                      barcode.requestFocus();
                      return true;
                  }
