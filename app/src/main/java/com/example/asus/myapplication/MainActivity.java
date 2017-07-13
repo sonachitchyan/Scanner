@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private Button undo, zero;
     private String hints[] = {"Barcode"};
     private BroadcastReceiver receiver;
+    private LinearLayout linearLayout;
     Data temp_data;
     Gson gs = new Gson();
     IntentFilter intentfilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
@@ -70,8 +72,8 @@ public class MainActivity extends AppCompatActivity {
         name_text = (TextView) findViewById(R.id.name_text);
         result_text = (TextView) findViewById(R.id.results);
         undo = (Button) findViewById(R.id.undo);
+        linearLayout = (LinearLayout) findViewById(R.id.main_act);
         price_text = (TextView) findViewById(R.id.price_text);
-        dataList1 = new ArrayList<>();
         zero = (Button) findViewById(R.id.zero);
         prefix = getIntent().getStringExtra("prefix");
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -79,12 +81,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (getIntent().getBooleanExtra("cleared", false)) {
             dataList1 = new ArrayList<>();
+            db.makeAllZero();
         }
 
 
-        if (!db.isEmpty()) {
-            db.deletAll();
-        }
         number.requestFocus();
          number.setOnKeyListener(new View.OnKeyListener() {
              @Override
@@ -93,11 +93,10 @@ public class MainActivity extends AppCompatActivity {
                      ex_client = number.getText().toString();
                      File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+prefix+"_"+ex_client+"export.json");
                      if (file.exists()){
-                         JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.txt")));
+                         JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.json")));
                          dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
                          for(Data d: dataList1){
                              db.updateInfoByBarcode(d);
-                             Toast.makeText(MainActivity.this, "" + d.getCount(), Toast.LENGTH_SHORT).show();
                          }
                      }
                      else {
@@ -105,6 +104,9 @@ public class MainActivity extends AppCompatActivity {
                          db.makeAllZero();
                      }
                      barcode.requestFocus();
+                     name_text.setText("");
+                     result_text.setText("");
+                     price_text.setText("");
                      return true;
                  }
                  return false;
@@ -389,7 +391,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        this.unregisterReceiver(receiver);
     }
 
 
@@ -449,12 +450,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            linearLayout.setEnabled(true);
             count.requestFocus();
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            linearLayout.setEnabled(false);
             fillData();
             for (Data d: dataList){
                 if (d.getBarcode().equals(barcode.getText().toString())){
