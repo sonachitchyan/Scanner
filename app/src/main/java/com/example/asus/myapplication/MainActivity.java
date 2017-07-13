@@ -2,6 +2,7 @@ package com.example.asus.myapplication;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -9,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
@@ -89,6 +91,10 @@ public class MainActivity extends AppCompatActivity {
              public boolean onKey(View view, int i, KeyEvent keyEvent) {
                  if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
                      ex_client = number.getText().toString();
+//                     if (new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/" + prefix + "_" + ex_client+"export.txt").exists()){
+//                         JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.txt")));
+//                         dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
+//                     }
                      barcode.requestFocus();
                      return true;
                  }
@@ -501,11 +507,26 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
         if (!sharedPreferences.getString("prefix", "").equals("")){
-            this.finishAffinity();
+                AlertDialog.Builder alert = new AlertDialog.Builder(this);
+                alert.setTitle("ԶԳՈՒՇԱՑՈՒՄ");
+                alert.setMessage("Փակել ծրագիրը?");
+                alert.setPositiveButton("ԱՅՈ", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MainActivity.this.finishAffinity();
+                    }
+                });
+            alert.setNegativeButton("ՈՉ", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+
+                }
+            });
+            alert.show();
+
         }
-    }
+        }
     public String forSergey(String data){
         String finall = "";
         char[] d = data.toCharArray();

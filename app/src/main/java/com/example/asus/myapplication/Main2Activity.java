@@ -2,11 +2,14 @@ package com.example.asus.myapplication;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -27,7 +30,7 @@ public class Main2Activity extends AppCompatActivity {
     private RecAdapter recAdapter;
     private RecyclerView recyclerView;
     private Gson gson = new Gson();
-    private Button clear, back;
+    private Button back;
     private SearchView searchView;
     IntentFilter intentFilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
     BroadcastReceiver b;
@@ -80,16 +83,6 @@ public class Main2Activity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(recAdapter);
         recyclerView.invalidate();
-        clear = (Button) findViewById(R.id.clear);
-        clear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                datas = new ArrayList<>();
-                Intent intent1 = new Intent(Main2Activity.this, MainActivity.class);
-                intent1.putExtra("cleared", true);
-                startActivity(intent1);
-            }
-        });
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -143,4 +136,6 @@ public class Main2Activity extends AppCompatActivity {
         datas = datalist;
         super.onConfigurationChanged(newConfig);
     }
+
+
 }
