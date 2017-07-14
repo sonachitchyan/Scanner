@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
                     if ("ok".equals(status) && hints[0].equals("Barcode")) {
                         bar = intent.getStringExtra("SCAN_BARCODE1");
                         barcode.setText(bar);
+                        dataList = db.getAllInfo();
                         for (Data d: dataList){
                             if (d.getBarcode().equals(barcode.getText().toString())){
                                 name_text.setText(d.getName());
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                         count.requestFocus();
 
                     } else {
-                        Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, "Փորձեք կրկին", Toast.LENGTH_SHORT).show();
                         barcode.setText("");
                     }
                 }
@@ -167,14 +168,40 @@ public class MainActivity extends AppCompatActivity {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
                     boolean a = false;
+                    dataList = db.getAllInfo();
                     AAA:
                     for (Data d: dataList){
-                        if (d.getBarcode().equals(barcode.getText().toString())){
-                            name_text.setText(d.getName());
-                            price_text.setText(String.valueOf(d.getPrice()));
-                            result_text.setText(d.getCode() + "\n" +"\n" + d.getCount());
-                            a = true;
-                            break AAA;
+                        switch (hints[0]) {
+                            case "Barcode":
+                            if (d.getBarcode().equals(barcode.getText().toString())) {
+                                name_text.setText(d.getName());
+                                price_text.setText(String.valueOf(d.getPrice()));
+                                result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                a = true;
+                                break AAA;
+
+                            }
+                                break;
+                            case "Article":
+                                if (d.getArticle().equals(barcode.getText().toString())) {
+                                    name_text.setText(d.getName());
+                                    price_text.setText(String.valueOf(d.getPrice()));
+                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                    a = true;
+                                    break AAA;
+
+                                }
+                                break;
+                            case "Code":
+                                if (d.getCode().equals(barcode.getText().toString())) {
+                                    name_text.setText(d.getName());
+                                    price_text.setText(String.valueOf(d.getPrice()));
+                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                    a = true;
+                                    break AAA;
+
+                                }
+                                break;
                         }
                     }
                     if (!a){
@@ -184,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
                     else {
                         new Aaaa().execute();
                     }
-                    return true;
+                    return  true;
                 }
                 return false;
             }
