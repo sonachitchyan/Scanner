@@ -1,2 +1,2 @@
 # Scanner
-Barcode scanner for Newland MT65
+Barcode scanner app for Newland MT65
