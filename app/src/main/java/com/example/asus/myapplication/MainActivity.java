@@ -88,35 +88,35 @@ public class MainActivity extends AppCompatActivity {
 
 
         number.requestFocus();
-         number.setOnKeyListener(new View.OnKeyListener() {
-             @Override
-             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                 if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
-                     ex_client = number.getText().toString();
-                     File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+prefix+"_"+ex_client+"export.json");
-                     if (file.exists()){
-                         JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.json")));
-                         dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
+        number.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
+                    ex_client = number.getText().toString();
+                    File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+prefix+"_"+ex_client+"export.json");
+                    if (file.exists()){
+                        JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.json")));
+                        dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
 
-                         for(Data d: dataList1){
-                             db.updateInfoByBarcode(d);
-                         }
-                     }
-                     else {
-                         dataList1 = new ArrayList<>();
-                         db.makeAllZero();
-                     }
-                     Async async = new Async();
-                     async.execute();
-                     barcode.requestFocus();
-                     name_text.setText("");
-                     result_text.setText("");
-                     price_text.setText("");
-                     return true;
-                 }
-                 return false;
-             }
-         });
+                        for(Data d: dataList1){
+                            db.updateInfoByBarcode(d);
+                        }
+                    }
+                    else {
+                        dataList1 = new ArrayList<>();
+                        db.makeAllZero();
+                    }
+                    Async async = new Async();
+                    async.execute();
+                    barcode.requestFocus();
+                    name_text.setText("");
+                    result_text.setText("");
+                    price_text.setText("");
+                    return true;
+                }
+                return false;
+            }
+        });
 
 
         receiver = new BroadcastReceiver() {
@@ -173,14 +173,14 @@ public class MainActivity extends AppCompatActivity {
                     for (Data d: dataList){
                         switch (hints[0]) {
                             case "Barcode":
-                            if (d.getBarcode().equals(barcode.getText().toString())) {
-                                name_text.setText(d.getName());
-                                price_text.setText(String.valueOf(d.getPrice()));
-                                result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
-                                a = true;
-                                break AAA;
+                                if (d.getBarcode().equals(barcode.getText().toString())) {
+                                    name_text.setText(d.getName());
+                                    price_text.setText(String.valueOf(d.getPrice()));
+                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                    a = true;
+                                    break AAA;
 
-                            }
+                                }
                                 break;
                             case "Article":
                                 if (d.getArticle().equals(barcode.getText().toString())) {
@@ -246,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
                             db.changeCountForBarcode(d.getBarcode(), t);
                             name_text.setText(temp_data.getName());
                             result_text.setText(d.getCode() + "\n" + "\n" +
-                            d.getCount());
+                                    d.getCount());
                             price_text.setText(String.valueOf(d.getPrice()));
                             break BREAKING_POINT;
                         }
@@ -427,7 +427,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     name_text.setText(data.getName());
                     result_text.setText(data.getCode() +"\n" + "\n" +
-                    data.getCount());
+                            data.getCount());
                     price_text.setText(String.valueOf(data.getPrice()));
                     String info = gs.toJson(dataList1);
                     String info_2 = forSergey(info);
@@ -544,6 +544,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, Main2Activity.class);
                 String info = gs.toJson(dataList1);
                 intent.putExtra("data", info);
+                intent.putExtra("nameish", prefix + "_" + ex_client);
                 startActivity(intent);
                 return true;
             default:
@@ -573,21 +574,21 @@ public class MainActivity extends AppCompatActivity {
                 db.addInfo(d);
             }
         }
-            dataList = db.getAllInfo();
+        dataList = db.getAllInfo();
     }
 
     @Override
     public void onBackPressed() {
         if (!sharedPreferences.getString("prefix", "").equals("")){
-                AlertDialog.Builder alert = new AlertDialog.Builder(this);
-                alert.setTitle("ԶԳՈՒՇԱՑՈՒՄ");
-                alert.setMessage("Փակել ծրագիրը?");
-                alert.setPositiveButton("ԱՅՈ", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        MainActivity.this.finishAffinity();
-                    }
-                });
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setTitle("ԶԳՈՒՇԱՑՈՒՄ");
+            alert.setMessage("Փակել ծրագիրը?");
+            alert.setPositiveButton("ԱՅՈ", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    MainActivity.this.finishAffinity();
+                }
+            });
             alert.setNegativeButton("ՈՉ", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
@@ -597,7 +598,7 @@ public class MainActivity extends AppCompatActivity {
             alert.show();
 
         }
-        }
+    }
     public String forSergey(String data){
         String finall = "";
         char[] d = data.toCharArray();

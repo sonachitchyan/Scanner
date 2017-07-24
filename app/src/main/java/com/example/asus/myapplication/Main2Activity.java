@@ -1,28 +1,42 @@
 package com.example.asus.myapplication;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.support.v7.widget.AppCompatSpinner;
+import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
-import android.view.View;
+import android.util.Base64;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import com.google.zxing.BarcodeFormat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public class Main2Activity extends AppCompatActivity {
 
@@ -37,6 +51,19 @@ public class Main2Activity extends AppCompatActivity {
     String text;
     List<Data> datalist;
     DataBaseHandler db;
+    BluetoothAdapter mBluetoothAdapter;
+    BluetoothDevice mmDevice;
+    BluetoothSocket mmSocket;
+    InputStream mmInputStream;
+    OutputStream mmOutputStream;
+    Thread workerThread;
+    byte[] readBuffer;
+    int readBufferPosition;
+    int counter;
+    volatile boolean stopWorker;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,7 +123,7 @@ public class Main2Activity extends AppCompatActivity {
                         }
                     }
 
-                 }
+                }
 
                 return true;
             }
@@ -121,21 +148,210 @@ public class Main2Activity extends AppCompatActivity {
         unregisterReceiver(b);
     }
 
+
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putString("infoo", gson.toJson(recAdapter.getDataList()));
-        super.onSaveInstanceState(outState);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.print, menu);
+        return true;
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        for (int i=0; i<recyclerView.getAdapter().getItemCount(); i++){
-            Data data = db.getInfoByCode(recAdapter.getDataList().get(i).getCode());
-            datalist.add(data);
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id){
+            case R.id.print_menu:
+                double amount = 0.0;
+                for (Data d: datas){
+                    amount = amount + (d.getCount() * d.getPrice());
+                }
+                double rounded = (double) Math.round(amount * 100) / 100;
+                Bitmap barc = DWriter.createBarCode(getIntent().getStringExtra("nameish"), BarcodeFormat.CODE_128, 40, 50);
+                try {
+                    findBT();
+                    openBT();
+                    String msg = getIntent().getStringExtra("nameish") + "\n\n"+
+                            rounded + " AMD\n";
+                    sendData(msg);
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
+                    String currentDateandTime = sdf.format(new Date());
+                    sendData(currentDateandTime + "\n\n");
+
+                }
+                catch (Exception e){
+                    Log.i("aaaa", "aaaaa");
+                }
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        datas = datalist;
-        super.onConfigurationChanged(newConfig);
+    }
+    void findBT() {
+
+        try {
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+            if (mBluetoothAdapter == null) {
+                Toast.makeText(Main2Activity.this, "Bluetooth is not enabled", Toast.LENGTH_SHORT).show();
+            }
+
+            if (!mBluetoothAdapter.isEnabled()) {
+                Intent enableBluetooth = new Intent(
+                        BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBluetooth, 0);
+            }
+
+            Set<BluetoothDevice> pairedDevices = mBluetoothAdapter
+                    .getBondedDevices();
+            if (pairedDevices.size() > 0) {
+                for (BluetoothDevice device : pairedDevices) {
+
+
+                    if (device.getName().equals("B1ueTooth printer")) {
+                        mmDevice = device;
+                        Toast.makeText(Main2Activity.this, "Connected", Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+            }
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    void openBT() throws IOException {
+        try {
+            // Standard SerialPortService ID
+            UUID uuid = UUID.fromString("8fa87c0d0-afac-11de-8a39-0800200c9a66");
+            mmSocket = mmDevice.createRfcommSocketToServiceRecord(uuid);
+            mmSocket.connect();
+            mmOutputStream = mmSocket.getOutputStream();
+            mmInputStream = mmSocket.getInputStream();
+
+            beginListenForData();
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void beginListenForData() {
+        try {
+            final Handler handler = new Handler();
+
+            // This is the ASCII code for a newline character
+            final byte delimiter = 10;
+
+            stopWorker = false;
+            readBufferPosition = 0;
+            readBuffer = new byte[1024];
+
+            workerThread = new Thread(new Runnable() {
+                public void run() {
+                    while (!Thread.currentThread().isInterrupted()
+                            && !stopWorker) {
+
+                        try {
+
+                            int bytesAvailable = mmInputStream.available();
+                            if (bytesAvailable > 0) {
+                                byte[] packetBytes = new byte[bytesAvailable];
+                                mmInputStream.read(packetBytes);
+                                for (int i = 0; i < bytesAvailable; i++) {
+                                    byte b = packetBytes[i];
+                                    if (b == delimiter) {
+                                        byte[] encodedBytes = new byte[readBufferPosition];
+                                        System.arraycopy(readBuffer, 0,
+                                                encodedBytes, 0,
+                                                encodedBytes.length);
+                                        final String data = new String(
+                                                encodedBytes, "US-ASCII");
+                                        readBufferPosition = 0;
+
+                                        handler.post(new Runnable() {
+                                            public void run() {
+                                            }
+                                        });
+                                    } else {
+                                        readBuffer[readBufferPosition++] = b;
+                                    }
+                                }
+                            }
+
+                        } catch (IOException ex) {
+                            stopWorker = true;
+                        }
+
+                    }
+                }
+            });
+
+            workerThread.start();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void sendData(String msg) throws IOException {
+        try {
+
+            // the text typed by the user
+            msg += "\n";
+
+            mmOutputStream.write(msg.getBytes());
+
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    void sendData(Bitmap bitmap){
+        try {
+            mmOutputStream.write(bitmap.getRowBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printPhoto(Bitmap bmp) {
+        try {
+            if(bmp!=null){
+                ByteArrayOutputStream output = new ByteArrayOutputStream(bmp.getByteCount());
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, output);
+                byte[] imageBytes = output.toByteArray();
+                sendData(output.toString());
+            }else{
+                Log.e("Print Photo error", "the file isn't exists");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("PrintTools", "the file isn't exists");
+        }
     }
 
 
+
+
+    public static String POS_PrintBMP(Bitmap bitmap) {
+        // 先转黑白，再调用函数缩放位图
+        ByteArrayOutputStream output = new ByteArrayOutputStream(bitmap.getByteCount());
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output);
+        byte[] imageBytes = output.toByteArray();
+
+// Convert byte[] to string
+// I have also tried using Base64.encodeToString(imageBytes, 0);
+
+        String encodedString =Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+
+
+        return encodedString;
+    }
 }

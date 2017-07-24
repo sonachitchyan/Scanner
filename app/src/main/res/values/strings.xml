@@ -18,5 +18,7 @@
     <string name="terminal">Տեռմինալ համար...</string>
     <string name="input">Մուտքագրել</string>
     <string name="Zero">զրոյացնել</string>
+    <string name="print">Տպել</string>
+    <string name="fillin">Լրացրեք բաց թողնված դաշտերը</string>
 
 </resources>
