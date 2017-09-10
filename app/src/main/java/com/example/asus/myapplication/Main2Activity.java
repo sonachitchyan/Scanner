@@ -5,11 +5,15 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -26,13 +30,14 @@ import com.google.gson.stream.JsonReader;
 import com.google.zxing.BarcodeFormat;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -59,8 +64,9 @@ public class Main2Activity extends AppCompatActivity {
     Thread workerThread;
     byte[] readBuffer;
     int readBufferPosition;
-    int counter;
     volatile boolean stopWorker;
+    String printable;
+    BitSet dots;
 
 
 
@@ -77,6 +83,7 @@ public class Main2Activity extends AppCompatActivity {
         datalist = new ArrayList<>();
         datas = new ArrayList<>();
         db = new DataBaseHandler(this);
+        printable = getIntent().getStringExtra("nameish") + "\n\n";
         if (savedInstanceState!=null){
             text = savedInstanceState.getString("infoo");
         }
@@ -160,26 +167,49 @@ public class Main2Activity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id){
             case R.id.print_menu:
+                try {
+                    findBT();
+                    openBT();
+                }
+                catch (Exception e){
+                    Log.i("kkkjkjk", "lklklklk");
+                }
+
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
+                final String currentDateandTime = sdf.format(new Date());
                 double amount = 0.0;
                 for (Data d: datas){
                     amount = amount + (d.getCount() * d.getPrice());
                 }
-                double rounded = (double) Math.round(amount * 100) / 100;
-                Bitmap barc = DWriter.createBarCode(getIntent().getStringExtra("nameish"), BarcodeFormat.CODE_128, 40, 50);
-                try {
-                    findBT();
-                    openBT();
-                    String msg = getIntent().getStringExtra("nameish") + "\n\n"+
-                            rounded + " AMD\n";
-                    sendData(msg);
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
-                    String currentDateandTime = sdf.format(new Date());
-                    sendData(currentDateandTime + "\n\n");
+                final double rounded = (double) Math.round(amount * 100) / 100;
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(Main2Activity.this);
+                alertDialog.setTitle("Տպել");
+                alertDialog.setMessage("Տպել");
+                alertDialog.setPositiveButton("ԱՅՈ", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                       printable =rounded + " AMD\n\n" + currentDateandTime + "\n";
+                        try {
 
-                }
-                catch (Exception e){
-                    Log.i("aaaa", "aaaaa");
-                }
+                            sendData(printable);
+
+                        }
+                        catch (Exception e){
+                            Log.i("aaaa", "aaaaa");
+                        }
+                    }
+                });
+                alertDialog.setNegativeButton("ՈՉ", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                });
+
+                alertDialog.show();
+
+
+
 
                 return true;
             default:
@@ -215,8 +245,6 @@ public class Main2Activity extends AppCompatActivity {
                 }
             }
 
-        } catch (NullPointerException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -232,9 +260,7 @@ public class Main2Activity extends AppCompatActivity {
 
             beginListenForData();
 
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
+        }  catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -269,7 +295,7 @@ public class Main2Activity extends AppCompatActivity {
                                                 encodedBytes, 0,
                                                 encodedBytes.length);
                                         final String data = new String(
-                                                encodedBytes, "US-ASCII");
+                                                encodedBytes, "UNICODE");
                                         readBufferPosition = 0;
 
                                         handler.post(new Runnable() {
@@ -301,57 +327,97 @@ public class Main2Activity extends AppCompatActivity {
     void sendData(String msg) throws IOException {
         try {
 
-            // the text typed by the user
             msg += "\n";
 
             mmOutputStream.write(msg.getBytes());
+            print_image(DWriter.createBarCode(getIntent().getStringExtra("nameish"), BarcodeFormat.CODE_128, 100, 100));
 
 
-        } catch (NullPointerException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    void sendData(Bitmap bitmap){
-        try {
-            mmOutputStream.write(bitmap.getRowBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
-    public void printPhoto(Bitmap bmp) {
-        try {
-            if(bmp!=null){
-                ByteArrayOutputStream output = new ByteArrayOutputStream(bmp.getByteCount());
-                bmp.compress(Bitmap.CompressFormat.PNG, 100, output);
-                byte[] imageBytes = output.toByteArray();
-                sendData(output.toString());
-            }else{
-                Log.e("Print Photo error", "the file isn't exists");
+    private void print_image(Bitmap bmp) throws IOException {
+            convertBitmap(bmp);
+            mmOutputStream.write(PrinterCommands.SET_LINE_SPACING_12);
+
+            int offset = 0;
+            while (offset < bmp.getHeight()) {
+                mmOutputStream.write(PrinterCommands.SELECT_BIT_IMAGE_MODE);
+                for (int x = 0; x < bmp.getWidth(); ++x) {
+
+                    for (int k = 0; k < 3; ++k) {
+
+                        byte slice = 0;
+                        for (int b = 0; b < 8; ++b) {
+                            int y = (((offset / 8) + k) * 8) + b;
+                            int i = (y * bmp.getWidth()) + x;
+                            boolean v = false;
+                            if (i < dots.length()) {
+                                v = dots.get(i);
+                            }
+                            slice |= (byte) ((v ? 1 : 0) << (7 - b));
+                        }
+                        mmOutputStream.write(slice);
+                    }
+                }
+                offset += bmp.getHeight();
+                mmOutputStream.write(PrinterCommands.FEED_LINE);
+                mmOutputStream.write(PrinterCommands.FEED_LINE);
+                mmOutputStream.write(PrinterCommands.FEED_LINE);
+                mmOutputStream.write(PrinterCommands.FEED_LINE);
+                mmOutputStream.write(PrinterCommands.FEED_LINE);
+                mmOutputStream.write(PrinterCommands.FEED_LINE);
             }
+            mmOutputStream.write(PrinterCommands.SET_LINE_SPACING_30);
+    }
+
+    public String convertBitmap(Bitmap inputBitmap) {
+
+        int mWidth = inputBitmap.getWidth();
+        int mHeight = inputBitmap.getHeight();
+
+        convertArgbToGrayscale(inputBitmap, mWidth, mHeight);
+        return "ok";
+
+    }
+
+    private void convertArgbToGrayscale(Bitmap bmpOriginal, int width,
+                                        int height) {
+        int pixel;
+        int k = 0;
+        int B = 0, G = 0, R = 0;
+        dots = new BitSet();
+        try {
+
+            for (int x = 0; x < height; x++) {
+                for (int y = 0; y < width; y++) {
+                    // get one pixel color
+                    pixel = bmpOriginal.getPixel(y, x);
+
+                    // retrieve color of all channels
+                    R = Color.red(pixel);
+                    G = Color.green(pixel);
+                    B = Color.blue(pixel);
+                    // take conversion up to one single value by calculating
+                    // pixel intensity.
+                    R = G = B = (int) (0.299 * R + 0.587 * G + 0.114 * B);
+                    // set bit into bitset, by calculating the pixel's luma
+                    if (R < 55) {
+                        dots.set(k);//this is the bitset that i'm printing
+                    }
+                    k++;
+                }
+
+
+            }
+
+
         } catch (Exception e) {
-            e.printStackTrace();
-            Log.e("PrintTools", "the file isn't exists");
+            // TODO: handle exception
+            Log.e("sss", e.toString());
         }
     }
 
-
-
-
-    public static String POS_PrintBMP(Bitmap bitmap) {
-        // 先转黑白，再调用函数缩放位图
-        ByteArrayOutputStream output = new ByteArrayOutputStream(bitmap.getByteCount());
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output);
-        byte[] imageBytes = output.toByteArray();
-
-// Convert byte[] to string
-// I have also tried using Base64.encodeToString(imageBytes, 0);
-
-        String encodedString =Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-
-
-        return encodedString;
-    }
 }

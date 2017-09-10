@@ -50,11 +50,12 @@ public class MainActivity extends AppCompatActivity {
     private String hints[] = {"Barcode"};
     private BroadcastReceiver receiver;
     private LinearLayout linearLayout;
-    Data temp_data;
+    private String temp_code = "";
+    private Data temp_data;
     Gson gs = new Gson();
     IntentFilter intentfilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
     DataBaseHandler db = new DataBaseHandler(this);
-    List<Data> dataList, dataList1;
+    private List<Data> dataList, dataList1;
     String ex_client;
     String prefix;
     SharedPreferences sharedPreferences;
@@ -77,6 +78,11 @@ public class MainActivity extends AppCompatActivity {
         zero = (Button) findViewById(R.id.zero);
         prefix = getIntent().getStringExtra("prefix");
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+
+        Intent intent_broad = new Intent("ACTION_BAR_SCANCFG");
+        intent_broad.putExtra("EXTRA_SCAN_MODE", 3);
+        this.sendBroadcast(intent_broad);
 
 
         if (getIntent().getBooleanExtra("cleared", false)) {
@@ -134,12 +140,15 @@ public class MainActivity extends AppCompatActivity {
                                 name_text.setText(d.getName());
                                 price_text.setText(String.valueOf(d.getPrice()));
                                 result_text.setText(d.getCode() + "\n" +"\n" + d.getCount());
+                                temp_code = d.getCode();
                                 break;
                             }
                         }
                         new Aaaa().execute();
 
                         count.requestFocus();
+                        barcode.setEnabled(false);
+                        unregisterReceiver(receiver);
 
                     } else {
                         Toast.makeText(context, "Փորձեք կրկին", Toast.LENGTH_SHORT).show();
@@ -168,50 +177,59 @@ public class MainActivity extends AppCompatActivity {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
                     boolean a = false;
-                    dataList = db.getAllInfo();
-                    AAA:
-                    for (Data d: dataList){
-                        switch (hints[0]) {
-                            case "Barcode":
-                                if (d.getBarcode().equals(barcode.getText().toString())) {
-                                    name_text.setText(d.getName());
-                                    price_text.setText(String.valueOf(d.getPrice()));
-                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
-                                    a = true;
-                                    break AAA;
+                    if (!barcode.getText().toString().equals("")) {
+                        dataList = db.getAllInfo();
+                        AAA:
+                        for (Data d : dataList) {
+                            switch (hints[0]) {
+                                case "Barcode":
+                                    if (d.getBarcode().equals(barcode.getText().toString())) {
+                                        name_text.setText(d.getName());
+                                        price_text.setText(String.valueOf(d.getPrice()));
+                                        result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                        temp_code = d.getCode();
+                                        a = true;
+                                        break AAA;
 
-                                }
-                                break;
-                            case "Article":
-                                if (d.getArticle().equals(barcode.getText().toString())) {
-                                    name_text.setText(d.getName());
-                                    price_text.setText(String.valueOf(d.getPrice()));
-                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
-                                    a = true;
-                                    break AAA;
+                                    }
+                                    break;
+                                case "Article":
+                                    if (d.getArticle().equals(barcode.getText().toString())) {
+                                        name_text.setText(d.getName());
+                                        price_text.setText(String.valueOf(d.getPrice()));
+                                        result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                        temp_code = d.getCode();
+                                        a = true;
+                                        break AAA;
 
-                                }
-                                break;
-                            case "Code":
-                                if (d.getCode().equals(barcode.getText().toString())) {
-                                    name_text.setText(d.getName());
-                                    price_text.setText(String.valueOf(d.getPrice()));
-                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
-                                    a = true;
-                                    break AAA;
+                                    }
+                                    break;
+                                case "Code":
+                                    if (d.getCode().equals(barcode.getText().toString())) {
+                                        name_text.setText(d.getName());
+                                        price_text.setText(String.valueOf(d.getPrice()));
+                                        result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                        temp_code = d.getCode();
+                                        a = true;
+                                        break AAA;
 
-                                }
-                                break;
+                                    }
+                                    break;
+                            }
+                            barcode.setEnabled(false);
                         }
+                        if (!a) {
+                            Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
+                            barcode.setText("");
+
+                        } else {
+                            new Aaaa().execute();
+                        }
+                        return true;
+                    } else {
+                        Toast.makeText(MainActivity.this, "Ոչինչ մուտքագրված չէ", Toast.LENGTH_SHORT).show();
+                        return true;
                     }
-                    if (!a){
-                        Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
-                        barcode.setText("");
-                    }
-                    else {
-                        new Aaaa().execute();
-                    }
-                    return  true;
                 }
                 return false;
             }
@@ -257,6 +275,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        undo.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                if (i == KeyEvent.KEYCODE_ENTER && keyEvent.getAction()==KeyEvent.ACTION_DOWN){
+                    return true;
+                }
+                return false;
+            }
+        });
 
 
         radio_barcode.setChecked(true);
@@ -265,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
         number.setCursorVisible(false);
 
     }
+
 
     public void onRadioButtonChecked(View view) {
         boolean c = ((RadioButton) view).isChecked();
@@ -307,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
                 int temp = 0;
                 switch (hints[0]) {
                     case "Barcode":
-                        temp_data = db.getInfoByBarcode(barcode.getText().toString());
+                        temp_data = db.getInfoByCode(temp_code);
                         data = db.getInfoByBarcode(barcode.getText().toString());
                         if (data != null) {
                             temp = data.getCount();
@@ -323,8 +351,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case "Code":
-                        temp_data = db.getInfoByCode(barcode.getText().toString());
-                        data = db.getInfoByCode(barcode.getText().toString());
+                        temp_data = db.getInfoByCode(temp_code);
+                        data = db.getInfoByCode(temp_code);
                         if (data != null) {
                             temp = data.getCount();
                             if (def) {
@@ -339,8 +367,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case "Article":
-                        temp_data = db.getInfoByArticle(barcode.getText().toString());
-                        data = db.getInfoByArticle(barcode.getText().toString());
+                        temp_data = db.getInfoByArticle(temp_code);
+                        data = db.getInfoByArticle(temp_code);
                         if (data != null) {
                             temp = data.getCount();
                             if (def) {
@@ -436,6 +464,8 @@ public class MainActivity extends AppCompatActivity {
                     barcode.setText("");
                     count.setText("");
                     barcode.requestFocus();
+                    registerReceiver(receiver, intentfilter);
+                    barcode.setEnabled(true);
                 } else {
                     Toast.makeText(MainActivity.this, "Try again", Toast.LENGTH_SHORT).show();
                 }
