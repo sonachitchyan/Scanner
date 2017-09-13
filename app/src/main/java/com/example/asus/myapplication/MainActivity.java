@@ -99,14 +99,10 @@ public class MainActivity extends AppCompatActivity {
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
                 if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
                     ex_client = number.getText().toString();
-                    File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+prefix+"_"+ex_client+"export.json");
+                    File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+prefix+"_"+ex_client+"export.txt");
                     if (file.exists()){
-                        JsonReader jsonReader = new JsonReader(new StringReader(filereader(prefix + "_" + ex_client+"export.json")));
-                        dataList1 = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
-
-                        for(Data d: dataList1){
-                            db.updateInfoByBarcode(d);
-                        }
+                        filereader(prefix + "_" + ex_client+"export.txt", "export");
+                        dataList1 = db.getAllInfo();
                     }
                     else {
                         dataList1 = new ArrayList<>();
@@ -460,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
                     String info = gs.toJson(dataList1);
                     String info_2 = forSergey(info);
                     String file_path_name = prefix +"_"+ ex_client;
-                    filewriter(file_path_name + "export.json", info_2);
+                    filewriter(file_path_name + "export.txt", toText(dataList1));
                     barcode.setText("");
                     count.setText("");
                     barcode.requestFocus();
@@ -486,7 +482,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public String filereader(String filename) {
+    public String filereader(String filename, String type) {
         File extStore = Environment.getExternalStorageDirectory();
         String path = extStore.getAbsolutePath() + "/" + filename;
         Log.i("ExternalStorageDemo", "Read file: " + path);
@@ -502,6 +498,7 @@ public class MainActivity extends AppCompatActivity {
                     new InputStreamReader(fIn));
 
             while ((s = myReader.readLine()) != null) {
+                fromText(s, type);
                 ss.append(s);
             }
         } catch (Exception e) {
@@ -585,11 +582,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void fillData(){
         if (db.isEmpty()){
-            String text = filereader("import_main.json");
-            JsonReader jsonReader = new JsonReader(new StringReader(text));
-            jsonReader.setLenient(true);
-            dataList = gs.fromJson(jsonReader, new TypeToken<ArrayList<Data>>() {
-            }.getType());
+            filereader("import_main.txt", "import");
+            dataList = db.getAllInfo();
             for (Data d : dataList) {
                 boolean a = false;
                 for (Data dd: dataList1){
@@ -668,6 +662,102 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             count.requestFocus();
+        }
+    }
+
+    public String toText(List<Data> dataList){
+        String text = "";
+        for (Data d: dataList){
+            text = text +
+                    d.getBarcode() + "," + d.getCode() + "," + d.getCount() + "\n";
+        }
+        return text;
+    }
+
+    public void fromText(String tox, String file_type){
+        if (file_type.equals("export")){
+            Data data = new Data();
+            data.setCount(0);
+            String a = "";
+            String hushum = "barcode";
+            char[] seq = tox.toCharArray();
+            for (char aa: seq){
+                if (aa==',' || aa=='\n'){
+                    switch (hushum){
+                        case "barcode":
+                            data.setBarcode(a);
+                            a = "";
+                            hushum = "code";
+                            break;
+                        case "code":
+                            data.setCode(a);
+                            a = "";
+                            hushum = "count";
+                            break;
+                        case "count":
+                            data.setCount(Integer.valueOf(a));
+                            a = "";
+                            hushum = "barcode";
+                            break;
+                        case "price":
+                            data.setPrice(Double.valueOf(a));
+                            a = "";
+                            break;
+                        case "count_db":
+                            data.setCount_db(Integer.valueOf(a));
+                            a = "";
+                            hushum = "price";
+                            break;
+                    }
+
+                }
+            }
+            db.updateInfoByBarcode(data);
+
+        }
+        else if (file_type.equals("import")){
+            Data data = new Data();
+            data.setCount(0);
+            String a = "";
+            String hushum = "name";
+            char[] seq = tox.toCharArray();
+            for (char aa: seq){
+                if (aa==',' || aa=='\n'){
+                    switch (hushum){
+                        case "name":
+                            data.setName(a);
+                            a = "";
+                            hushum = "article";
+                            break;
+                        case "barcode":
+                            data.setBarcode(a);
+                            a = "";
+                            hushum = "code";
+                            break;
+                        case "code":
+                            data.setCode(a);
+                            a = "";
+                            hushum = "count_db";
+                            break;
+                        case "article":
+                            data.setArticle(a);
+                            a = "";
+                            hushum = "barcode";
+                            break;
+                        case "price":
+                            data.setPrice(Double.valueOf(a));
+                            a = "";
+                            break;
+                        case "count_db":
+                            data.setCount_db(Integer.valueOf(a));
+                            a = "";
+                            hushum = "price";
+                            break;
+                    }
+
+                }
+            }
+            db.addInfo(data);
         }
     }
 }
