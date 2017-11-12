@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +29,12 @@ public class RecAdapter extends RecyclerView.Adapter<RecAdapter.MyViewHolder> {
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
         Data data = dataList.get(position);
-        holder.final_code.setText(data.getBarcode());
+        String anun = data.getName();
+        if (anun.length()>=13) {
+            anun = TextUtils.substring(data.getName(), 0, 13);
+        }
+
+        holder.final_code.setText(anun);
         holder.final_count.setText(String.valueOf(data.getCount()));
         holder.final_price.setText(String.valueOf(data.getPrice()));
     }
@@ -57,6 +63,7 @@ public class RecAdapter extends RecyclerView.Adapter<RecAdapter.MyViewHolder> {
                     alertDialog.setTitle("ՔԱՆԱԿ");
                     alertDialog.setMessage("Փոխել քանակը");
                     final EditText input = new EditText(view.getContext());
+                    input.setMaxLines(1);
                     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT);

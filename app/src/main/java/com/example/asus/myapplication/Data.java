@@ -3,7 +3,7 @@ package com.example.asus.myapplication;
 
 public class Data {
     private int count;
-    private double price;
+    private double price, count_db;
     private String barcode, article, code, name;
 
 
@@ -55,6 +55,14 @@ public class Data {
         this.count = count;
     }
 
+    public double getCount_db() {
+        return count_db;
+    }
+
+    public void setCount_db(double count_db) {
+        this.count_db = count_db;
+    }
+
     public Data(int count, String name, double price) {
         this.count = count;
         this.name = name;
@@ -64,9 +72,19 @@ public class Data {
     public Data() {
     }
 
-    public Data(String name,  String  article, String barcode,
+    public Data(int count, double price,  String barcode, String article, String code, String name,double count_db) {
+        this.count = count;
+        this.price = price;
+        this.count_db = count_db;
+        this.barcode = barcode;
+        this.article = article;
+        this.code = code;
+        this.name = name;
+    }
+
+    public Data(String name, String  article, String barcode,
                 String code, int count,
-                 double price) {
+                double price, double count_db) {
         this.count = count;
         this.article = article;
         this.barcode = barcode;

@@ -20,6 +20,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
     private static final String KEY_BARCODE = "barcode";
     private static final String KEY_CODE = "code";
     private static final String KEY_COUNT = "count";
+    private static final String KEY_COUNT_DB = "count_db";
     private static final String KEY_NAME = "name";
     private static final String KEY_PRICE = "price";
     private static final String SQL_DELETE_ENTRIES =
@@ -32,6 +33,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_BARCODE + " TEXT NOT NULL, " +
                 KEY_CODE + " TEXT PRIMARY KEY NOT NULL, " +
                 KEY_COUNT + " INTEGER NOT NULL, " +
+                KEY_COUNT_DB + " DOUBLE NOT NULL, " +
                 KEY_PRICE + " DOUBLE NOT NULL" + ");";
         db.execSQL(CREATE_CONTACTS_TABLE);
 
@@ -55,6 +57,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         contentValues.put(KEY_CODE, data.getCode());
         contentValues.put(KEY_COUNT, data.getCount());
         contentValues.put(KEY_PRICE, data.getPrice());
+        contentValues.put(KEY_COUNT_DB, data.getCount_db());
 
 
         db.insert(TABlE_NAME, null, contentValues);
@@ -69,7 +72,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_BARCODE,
                 KEY_CODE,
                 KEY_COUNT,
-                KEY_PRICE
+                KEY_PRICE,
+                KEY_COUNT_DB
         }, KEY_BARCODE + "=?", new String[]{barcode}, null, null, null);
         if (cursor != null && cursor.getCount()>0) {
             cursor.moveToFirst();
@@ -83,7 +87,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(2),
                 cursor.getString(3),
                 cursor.getInt(4),
-               cursor.getDouble(5));
+               cursor.getDouble(5),
+                cursor.getDouble(6));
         return data;
     }
 
@@ -95,7 +100,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_BARCODE,
                 KEY_CODE,
                 KEY_COUNT,
-                KEY_PRICE
+                KEY_PRICE,
+                KEY_COUNT_DB
         }, KEY_CODE + "=?", new String[]{ code}, null, null, null);
         if (cursor != null && cursor.getCount()>0) {
             cursor.moveToFirst();
@@ -110,7 +116,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(2),
                 cursor.getString(3),
                 cursor.getInt(4),
-                cursor.getDouble(5));
+                cursor.getDouble(5),
+                cursor.getDouble(6));
         return data;
     }
     public Data getInfoByArticle(String article) {
@@ -121,7 +128,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 KEY_BARCODE,
                 KEY_CODE,
                 KEY_COUNT,
-                KEY_PRICE
+                KEY_PRICE,
+                KEY_COUNT_DB
         }, KEY_ARTICLE + "=?", new String[]{ String.valueOf(article)}, null, null, null);
         if (cursor != null && cursor.getCount()>0) {
             cursor.moveToFirst();
@@ -135,7 +143,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(2),
                 cursor.getString(3),
                 cursor.getInt(4),
-                cursor.getDouble(5));
+                cursor.getDouble(5),
+                cursor.getDouble(6));
         return data;
     }
     public int updateInfoByBarcode(Data data) {
@@ -196,7 +205,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 data.setBarcode(cursor.getString(2));
                 data.setCode(cursor.getString(3));
                 data.setCount(cursor.getInt(4));
-                data.setPrice(cursor.getDouble(5));
+                data.setCount_db(cursor.getDouble(5));
+                data.setPrice(cursor.getDouble(6));
 
                 dataList.add(data);
             } while (cursor.moveToNext());

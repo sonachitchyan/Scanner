@@ -23,9 +23,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.zxing.BarcodeFormat;
 
@@ -51,6 +53,7 @@ public class Main2Activity extends AppCompatActivity {
     private Gson gson = new Gson();
     private Button back;
     private SearchView searchView;
+    TextView total;
     IntentFilter intentFilter = new IntentFilter("nlscan.action.SCANNER_RESULT");
     BroadcastReceiver b;
     String text;
@@ -67,7 +70,7 @@ public class Main2Activity extends AppCompatActivity {
     volatile boolean stopWorker;
     String printable;
     BitSet dots;
-
+    int amounttotal;
 
 
     @Override
@@ -76,25 +79,31 @@ public class Main2Activity extends AppCompatActivity {
         setContentView(R.layout.activity_main2);
         recyclerView = (RecyclerView) findViewById(R.id.rec);
         searchView = (SearchView) findViewById(R.id.search);
-        data_search =new ArrayList<>();
+        total = (TextView) findViewById(R.id.total);
+        data_search = new ArrayList<>();
         searchView.setActivated(true);
         searchView.setQueryHint("Փնտրել");
         searchView.onActionViewExpanded();
         datalist = new ArrayList<>();
         datas = new ArrayList<>();
         db = new DataBaseHandler(this);
+        amounttotal = 0;
         printable = getIntent().getStringExtra("nameish") + "\n\n";
-        if (savedInstanceState!=null){
+        if (savedInstanceState != null) {
             text = savedInstanceState.getString("infoo");
         }
+
         for (Data d: db.getAllInfo()){
             if (d.getCount()!=0){
+                amounttotal +=d.getCount();
                 datas.add(d);
             }
         }
 
 
-        b=new BroadcastReceiver() {
+
+
+        b = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 final String status = intent.getStringExtra("SCAN_STATE");
@@ -109,9 +118,6 @@ public class Main2Activity extends AppCompatActivity {
 
         final Intent intent = getIntent();
         text = intent.getStringExtra("data");
-        JsonReader jsonReader = new JsonReader(new StringReader(text));
-        jsonReader.setLenient(true);
-        //datas = gson.fromJson(jsonReader, new TypeToken<ArrayList<Data>>(){}.getType());
         recAdapter = new RecAdapter(datas, this);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(layoutManager);
@@ -125,10 +131,11 @@ public class Main2Activity extends AppCompatActivity {
                     for (Data d : datas) {
                         if (d.getBarcode().equals(query)) {
                             data_search.add(d);
-                            recAdapter.setDataList(data_search);
-                            recyclerView.setAdapter(recAdapter);
+
                         }
                     }
+                    recAdapter.setDataList(data_search);
+                    recyclerView.setAdapter(recAdapter);
 
                 }
 
@@ -137,7 +144,7 @@ public class Main2Activity extends AppCompatActivity {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                if (newText.equals("")){
+                if (newText.equals("")) {
                     recAdapter.setDataList(datas);
                     recyclerView.setAdapter(recAdapter);
                 }
@@ -165,20 +172,19 @@ public class Main2Activity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        switch (id){
+        switch (id) {
             case R.id.print_menu:
                 try {
                     findBT();
                     openBT();
-                }
-                catch (Exception e){
+                } catch (Exception e) {
                     Log.i("kkkjkjk", "lklklklk");
                 }
 
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
                 final String currentDateandTime = sdf.format(new Date());
                 double amount = 0.0;
-                for (Data d: datas){
+                for (Data d : datas) {
                     amount = amount + (d.getCount() * d.getPrice());
                 }
                 final double rounded = (double) Math.round(amount * 100) / 100;
@@ -188,13 +194,12 @@ public class Main2Activity extends AppCompatActivity {
                 alertDialog.setPositiveButton("ԱՅՈ", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                       printable =rounded + " AMD\n\n" + currentDateandTime + "\n";
+                        printable = rounded + " AMD\n\n" + currentDateandTime + "\n";
                         try {
 
                             sendData(printable);
 
-                        }
-                        catch (Exception e){
+                        } catch (Exception e) {
                             Log.i("aaaa", "aaaaa");
                         }
                     }
@@ -209,13 +214,12 @@ public class Main2Activity extends AppCompatActivity {
                 alertDialog.show();
 
 
-
-
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
     void findBT() {
 
         try {
@@ -249,6 +253,7 @@ public class Main2Activity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
     void openBT() throws IOException {
         try {
             // Standard SerialPortService ID
@@ -260,7 +265,7 @@ public class Main2Activity extends AppCompatActivity {
 
             beginListenForData();
 
-        }  catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -339,38 +344,38 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     private void print_image(Bitmap bmp) throws IOException {
-            convertBitmap(bmp);
-            mmOutputStream.write(PrinterCommands.SET_LINE_SPACING_12);
+        convertBitmap(bmp);
+        mmOutputStream.write(PrinterCommands.SET_LINE_SPACING_12);
 
-            int offset = 0;
-            while (offset < bmp.getHeight()) {
-                mmOutputStream.write(PrinterCommands.SELECT_BIT_IMAGE_MODE);
-                for (int x = 0; x < bmp.getWidth(); ++x) {
+        int offset = 0;
+        while (offset < bmp.getHeight()) {
+            mmOutputStream.write(PrinterCommands.SELECT_BIT_IMAGE_MODE);
+            for (int x = 0; x < bmp.getWidth(); ++x) {
 
-                    for (int k = 0; k < 3; ++k) {
+                for (int k = 0; k < 3; ++k) {
 
-                        byte slice = 0;
-                        for (int b = 0; b < 8; ++b) {
-                            int y = (((offset / 8) + k) * 8) + b;
-                            int i = (y * bmp.getWidth()) + x;
-                            boolean v = false;
-                            if (i < dots.length()) {
-                                v = dots.get(i);
-                            }
-                            slice |= (byte) ((v ? 1 : 0) << (7 - b));
+                    byte slice = 0;
+                    for (int b = 0; b < 8; ++b) {
+                        int y = (((offset / 8) + k) * 8) + b;
+                        int i = (y * bmp.getWidth()) + x;
+                        boolean v = false;
+                        if (i < dots.length()) {
+                            v = dots.get(i);
                         }
-                        mmOutputStream.write(slice);
+                        slice |= (byte) ((v ? 1 : 0) << (7 - b));
                     }
+                    mmOutputStream.write(slice);
                 }
-                offset += bmp.getHeight();
-                mmOutputStream.write(PrinterCommands.FEED_LINE);
-                mmOutputStream.write(PrinterCommands.FEED_LINE);
-                mmOutputStream.write(PrinterCommands.FEED_LINE);
-                mmOutputStream.write(PrinterCommands.FEED_LINE);
-                mmOutputStream.write(PrinterCommands.FEED_LINE);
-                mmOutputStream.write(PrinterCommands.FEED_LINE);
             }
-            mmOutputStream.write(PrinterCommands.SET_LINE_SPACING_30);
+            offset += bmp.getHeight();
+            mmOutputStream.write(PrinterCommands.FEED_LINE);
+            mmOutputStream.write(PrinterCommands.FEED_LINE);
+            mmOutputStream.write(PrinterCommands.FEED_LINE);
+            mmOutputStream.write(PrinterCommands.FEED_LINE);
+            mmOutputStream.write(PrinterCommands.FEED_LINE);
+            mmOutputStream.write(PrinterCommands.FEED_LINE);
+        }
+        mmOutputStream.write(PrinterCommands.SET_LINE_SPACING_30);
     }
 
     public String convertBitmap(Bitmap inputBitmap) {
@@ -420,4 +425,18 @@ public class Main2Activity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        double amount = 0.0;
+        for (Data d : datas) {
+            amount = amount + (d.getCount() * d.getPrice());
+        }
+        final double rounded = (double) Math.round(amount * 100) / 100;
+        total.setText("Ընդհանուր քանակ` " + amounttotal + "\n\n\n" +
+            "Ընդհանուր գին` " + rounded
+        );
+    }
 }

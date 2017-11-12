@@ -100,16 +100,11 @@ public class MainActivity extends AppCompatActivity {
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
                 if (i==KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN){
                     dataList1 = new ArrayList<Data>();
-
                     ex_client = number.getText().toString();
                     File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), prefix+"_"+ex_client+"export.txt");
                     if (file.exists()){
-                        Log.i("ssssss", "exav");
                         filereader(prefix + "_" + ex_client+"export.txt", "export");
                         existing = true;
-                        for (Data d: dataList1){
-                            Log.i("AAAAAAAA", "" + d.getCount());
-                        }
                     }
                     else {
                         dataList1 = new ArrayList<>();
@@ -375,7 +370,7 @@ public class MainActivity extends AppCompatActivity {
                 int temp = 0;
                 switch (hints[0]) {
                     case "Barcode":
-                        temp_data = db.getInfoByCode(temp_code);
+                        temp_data = db.getInfoByBarcode(barcode.getText().toString());
                         data = db.getInfoByBarcode(barcode.getText().toString());
                         if (data != null) {
                             temp = data.getCount();
@@ -391,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case "Code":
-                        temp_data = db.getInfoByCode(temp_code);
+                        temp_data = db.getInfoByCode(barcode.getText().toString());
                         data = db.getInfoByCode(barcode.getText().toString());
                         if (data != null) {
                             temp = data.getCount();
@@ -436,18 +431,22 @@ public class MainActivity extends AppCompatActivity {
                                     if (d.getBarcode().equals(barcode.getText().toString())) {
                                         d.setCount(temp);
                                         ex = true;
+                                        break;
+
                                     }
                                     break;
                                 case "Code":
                                     if (d.getCode().equals(barcode.getText().toString())) {
                                         d.setCount(temp);
                                         ex = true;
+                                        break;
                                     }
                                     break;
                                 case "Article":
                                     if (d.getArticle().equals(barcode.getText().toString())) {
                                         d.setCount(temp);
                                         ex = true;
+                                        break;
                                     }
                                     break;
                             }
@@ -526,6 +525,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public String filereader(String filename, String type) {
+        db.makeAllZero();
         File extStore = Environment.getExternalStorageDirectory();
         String path = extStore.getAbsolutePath() + "/" + filename;
         Log.i("ExternalStorageDemo", "Read file: " + path);
@@ -544,6 +544,7 @@ public class MainActivity extends AppCompatActivity {
                 fromText(s, type);
                 ss.append(s);
             }
+            myReader.close();
         } catch (Exception e) {
 
         }
@@ -562,6 +563,7 @@ public class MainActivity extends AppCompatActivity {
                 outputStreamWriter.write(text);
                 outputStreamWriter.flush();
                 outputStreamWriter.close();
+                fileOutput.close();
             } catch (IOException e) {
                 Toast.makeText(this, "Problem occurred", Toast.LENGTH_SHORT).show();
             }
@@ -740,6 +742,7 @@ public class MainActivity extends AppCompatActivity {
             }
             data.setCount(Integer.valueOf(a));
             dataList1.add(data);
+            db.updateInfoByBarcode(data);
 
         }
         else if (file_type.equals("import")){
@@ -764,7 +767,7 @@ public class MainActivity extends AppCompatActivity {
                         case "code":
                             data.setCode(a);
                             a = "";
-                            hushum = "price";
+                            hushum = "count_db";
                             break;
                         case "article":
                             data.setArticle(a);
@@ -772,6 +775,12 @@ public class MainActivity extends AppCompatActivity {
                             Log.i("AAA", "" + data.getArticle());
                             hushum = "barcode";
                             break;
+                        case "count_db":
+                            data.setCount_db(Double.valueOf(a));
+                            a = "";
+                            hushum = "price";
+                            break;
+
 
                     }
 
