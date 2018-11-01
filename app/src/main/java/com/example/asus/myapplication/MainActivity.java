@@ -134,13 +134,28 @@ public class MainActivity extends AppCompatActivity {
                         bar = intent.getStringExtra("SCAN_BARCODE1");
                         barcode.setText(bar);
                         dataList = db.getAllInfo();
-                        for (Data d: dataList){
-                            if (d.getBarcode().equals(barcode.getText().toString())){
-                                name_text.setText(d.getName());
-                                price_text.setText(String.valueOf(d.getPrice()));
-                                result_text.setText(d.getCode() + "\n" +"\n" + d.getCount());
-                                temp_code = d.getCode();
-                                break;
+                        char[] charArray = bar.toCharArray();
+                        if (charArray[0]=='2'){
+                            if (charArray[1]>='3' && charArray[1]<='9'){
+                                for (Data d: dataList){
+                                    if (d.getCode().equals(bar.substring(2,7))){
+                                        name_text.setText(d.getName());
+                                        price_text.setText(String.valueOf(d.getPrice() * Double.valueOf(bar.substring(7,12))/1000));
+                                        result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                        temp_code = d.getCode();
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            for (Data d : dataList) {
+                                if (d.getBarcode().equals(barcode.getText().toString())) {
+                                    name_text.setText(d.getName());
+                                    price_text.setText(String.valueOf(d.getPrice()));
+                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                    temp_code = d.getCode();
+                                    break;
+                                }
                             }
                         }
                         new Aaaa().execute();
@@ -182,14 +197,30 @@ public class MainActivity extends AppCompatActivity {
                         for (Data d : dataList) {
                             switch (hints[0]) {
                                 case "Barcode":
-                                    if (d.getBarcode().equals(barcode.getText().toString())) {
-                                        name_text.setText(d.getName());
-                                        price_text.setText(String.valueOf(d.getPrice()));
-                                        result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
-                                        temp_code = d.getCode();
-                                        a = true;
-                                        break AAA;
+                                    String bar = barcode.getText().toString();
+                                    char[] charArray = bar.toCharArray();
+                                    if (charArray[0]=='2'){
+                                        if (charArray[1]>='3' && charArray[1]<='9'){
+                                                if (d.getCode().equals(bar.substring(2,7))){
+                                                    name_text.setText(d.getName());
+                                                    price_text.setText(String.valueOf(d.getPrice() * Double.valueOf(bar.substring(7,12))/1000));
+                                                    result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                                    temp_code = d.getCode();
+                                                    break AAA;
+                                                }
+                                        }
+                                    }
+                                    else {
 
+                                        if (d.getBarcode().equals(barcode.getText().toString())) {
+                                            name_text.setText(d.getName());
+                                            price_text.setText(String.valueOf(d.getPrice()));
+                                            result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
+                                            temp_code = d.getCode();
+                                            a = true;
+                                            break AAA;
+
+                                        }
                                     }
                                     break;
                                 case "Article":
