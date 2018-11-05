@@ -32,7 +32,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 + KEY_ARTICLE + " TEXT NOT NULL, " +
                 KEY_BARCODE + " TEXT NOT NULL, " +
                 KEY_CODE + " TEXT PRIMARY KEY NOT NULL, " +
-                KEY_COUNT + " INTEGER NOT NULL, " +
+                KEY_COUNT + " DOUBLE NOT NULL, " +
                 KEY_COUNT_DB + " DOUBLE NOT NULL, " +
                 KEY_PRICE + " DOUBLE NOT NULL" + ");";
         db.execSQL(CREATE_CONTACTS_TABLE);
@@ -86,7 +86,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(1),
                 cursor.getString(2),
                 cursor.getString(3),
-                cursor.getInt(4),
+                cursor.getDouble(4),
                cursor.getDouble(5),
                 cursor.getDouble(6));
         return data;
@@ -115,7 +115,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(1),
                 cursor.getString(2),
                 cursor.getString(3),
-                cursor.getInt(4),
+                cursor.getDouble(4),
                 cursor.getDouble(5),
                 cursor.getDouble(6));
         return data;
@@ -142,7 +142,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 cursor.getString(1),
                 cursor.getString(2),
                 cursor.getString(3),
-                cursor.getInt(4),
+                cursor.getDouble(4),
                 cursor.getDouble(5),
                 cursor.getDouble(6));
         return data;
@@ -204,7 +204,7 @@ public class DataBaseHandler extends SQLiteOpenHelper {
                 data.setArticle(cursor.getString(1));
                 data.setBarcode(cursor.getString(2));
                 data.setCode(cursor.getString(3));
-                data.setCount(cursor.getInt(4));
+                data.setCount(cursor.getDouble(4));
                 data.setCount_db(cursor.getDouble(5));
                 data.setPrice(cursor.getDouble(6));
 
@@ -224,19 +224,19 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=0;";
         db.execSQL(query);
     }
-    public void changeCountForBarcode(String barcode, int count){
+    public void changeCountForBarcode(String barcode, double count){
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=" + count +" WHERE " +
                 KEY_BARCODE + "='" + barcode + "';";
         db.execSQL(query);
     }
-    public void changeCountForCode(String code, int count){
+    public void changeCountForCode(String code, double count){
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "=" + count +" WHERE " +
                 KEY_CODE + "='" + code + "';";
         db.execSQL(query);
     }
-    public void changeCountForArticle(String article, int count){
+    public void changeCountForArticle(String article, double count){
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "UPDATE " + TABlE_NAME + " SET " + KEY_COUNT + "= " + count + " WHERE " +
                 KEY_ARTICLE + "= '" + article + "';";

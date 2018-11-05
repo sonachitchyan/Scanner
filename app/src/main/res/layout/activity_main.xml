@@ -76,7 +76,7 @@
         android:layout_height="wrap_content"
         android:hint="@string/count"
         android:maxLines="1"
-        android:inputType="number" />
+        android:inputType="numberDecimal" />
 
 
     <LinearLayout

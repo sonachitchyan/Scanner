@@ -204,8 +204,11 @@ public class MainActivity extends AppCompatActivity {
                                                 if (d.getCode().equals(bar.substring(2,7))){
                                                     name_text.setText(d.getName());
                                                     price_text.setText(String.valueOf(d.getPrice() * Double.valueOf(bar.substring(7,12))/1000));
+                                                    count.setText(String.valueOf(Double.valueOf(bar.substring(7,12))/1000));
                                                     result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
                                                     temp_code = d.getCode();
+                                                    count.requestFocus();
+                                                    a= true;
                                                     break AAA;
                                                 }
                                         }
@@ -311,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
                         if (temp_data!=null){
                             for (Data d: dataList1){
                                 if (d.getBarcode().equals(temp_data.getBarcode()) && d.getCount()>=temp_data.getCount()){
-                                    int t = d.getCount();
+                                    double t = d.getCount();
                                     t-= temp_data.getCount();
                                     d.setCount(t);
                                     db.changeCountForBarcode(d.getBarcode(), t);
@@ -398,19 +401,28 @@ public class MainActivity extends AppCompatActivity {
                 def = true;
             }
             if (!barcode.getText().toString().equals("")) {
-                int temp = 0;
+                double temp = 0;
                 switch (hints[0]) {
                     case "Barcode":
-                        temp_data = db.getInfoByBarcode(barcode.getText().toString());
-                        data = db.getInfoByBarcode(barcode.getText().toString());
+                        char[] charArray = barcode.getText().toString().toCharArray();
+                        if (charArray[0]=='2'){
+                            if (charArray[1]>='3' && charArray[1]<='9'){
+                                temp_data = db.getInfoByCode(barcode.getText().toString().substring(2,7));
+                                data = db.getInfoByCode(barcode.getText().toString().substring(2,7));
+                                }
+                            }
+                        else{
+                            temp_data = db.getInfoByBarcode(barcode.getText().toString());
+                            data = db.getInfoByBarcode(barcode.getText().toString());
+                        }
                         if (data != null) {
                             temp = data.getCount();
                             if (def) {
                                 temp++;
                                 temp_data.setCount(1);
                             } else {
-                                temp += Integer.parseInt(count.getText().toString());
-                                temp_data.setCount(Integer.parseInt(count.getText().toString()));
+                                temp += Double.parseDouble(count.getText().toString());
+                                temp_data.setCount(Double.parseDouble(count.getText().toString()));
                             }
                         } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
@@ -425,8 +437,8 @@ public class MainActivity extends AppCompatActivity {
                                 temp++;
                                 temp_data.setCount(1);
                             } else {
-                                temp += Integer.parseInt(count.getText().toString());
-                                temp_data.setCount(Integer.parseInt(count.getText().toString()));
+                                temp += Double.parseDouble(count.getText().toString());
+                                temp_data.setCount(Double.parseDouble(count.getText().toString()));
                             }
                         } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
@@ -441,8 +453,8 @@ public class MainActivity extends AppCompatActivity {
                                 temp++;
                                 temp_data.setCount(1);
                             } else {
-                                temp += Integer.parseInt(count.getText().toString());
-                                temp_data.setCount(Integer.parseInt(count.getText().toString()));
+                                temp += Double.parseDouble(count.getText().toString());
+                                temp_data.setCount(Double.parseDouble(count.getText().toString()));
                             }
                         } else {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
@@ -526,7 +538,6 @@ public class MainActivity extends AppCompatActivity {
                     name_text.setText(data.getName());
                     result_text.setText(data.getCode() +"\n" + "\n" +
                             data.getCount());
-                    price_text.setText(String.valueOf(data.getPrice()));
 
                     String file_path_name = prefix +"_"+ ex_client;
                     filewriter(file_path_name + "export.txt", toText(dataList1));
@@ -771,7 +782,7 @@ public class MainActivity extends AppCompatActivity {
                     a = a + aa;
                 }
             }
-            data.setCount(Integer.valueOf(a));
+            data.setCount(Double.valueOf(a));
             dataList1.add(data);
             db.updateInfoByBarcode(data);
 
