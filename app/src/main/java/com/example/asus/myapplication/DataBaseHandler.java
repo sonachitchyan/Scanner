@@ -30,8 +30,8 @@ public class DataBaseHandler extends SQLiteOpenHelper {
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABlE_NAME + "("
                  + KEY_NAME + " TEXT NOT NULL,"
                 + KEY_ARTICLE + " TEXT NOT NULL, " +
-                KEY_BARCODE + " TEXT NOT NULL, " +
-                KEY_CODE + " TEXT PRIMARY KEY NOT NULL, " +
+                KEY_BARCODE + " TEXT PRIMARY KEY NOT NULL, " +
+                KEY_CODE + " TEXT NOT NULL, " +
                 KEY_COUNT + " DOUBLE NOT NULL, " +
                 KEY_COUNT_DB + " DOUBLE NOT NULL, " +
                 KEY_PRICE + " DOUBLE NOT NULL" + ");";

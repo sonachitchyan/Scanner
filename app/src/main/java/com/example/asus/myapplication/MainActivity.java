@@ -135,14 +135,17 @@ public class MainActivity extends AppCompatActivity {
                         barcode.setText(bar);
                         dataList = db.getAllInfo();
                         char[] charArray = bar.toCharArray();
+                        boolean exists = false;
                         if (charArray[0]=='2'){
                             if (charArray[1]>='3' && charArray[1]<='9'){
                                 for (Data d: dataList){
                                     if (d.getCode().equals(bar.substring(2,7))){
                                         name_text.setText(d.getName());
                                         price_text.setText(String.valueOf(d.getPrice() * Double.valueOf(bar.substring(7,12))/1000));
+                                        count.setText(String.valueOf(Double.valueOf(bar.substring(7,12))/1000));
                                         result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
                                         temp_code = d.getCode();
+                                        exists = true;
                                     }
                                 }
                             }
@@ -154,18 +157,29 @@ public class MainActivity extends AppCompatActivity {
                                     price_text.setText(String.valueOf(d.getPrice()));
                                     result_text.setText(d.getCode() + "\n" + "\n" + d.getCount());
                                     temp_code = d.getCode();
+                                    exists = true;
                                     break;
                                 }
                             }
                         }
-                        new Aaaa().execute();
+                        if(exists) {
+                            new Aaaa().execute();
+                            count.requestFocus();
+                            barcode.setEnabled(false);
+                            MainActivity.this.unregisterReceiver(receiver);
+                        }
+                        else {
+                            Toast.makeText(context, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
+                            MainActivity.this.registerReceiver(receiver, intentfilter);
+                            barcode.setText("");
+                        }
 
-                        count.requestFocus();
-                        barcode.setEnabled(false);
-                        unregisterReceiver(receiver);
+
+
 
                     } else {
                         Toast.makeText(context, "Փորձեք կրկին", Toast.LENGTH_SHORT).show();
+                        MainActivity.this.registerReceiver(receiver, intentfilter);
                         barcode.setText("");
                     }
                 }
@@ -173,12 +187,13 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        this.registerReceiver(receiver, intentfilter);
+
 
         count.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    MainActivity.this.registerReceiver(receiver, intentfilter);
                     Reader reader = new Reader();
                     reader.execute();
                     return true;
@@ -254,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
                         if (!a) {
                             Toast.makeText(MainActivity.this, "Առկա չէ բազայում", Toast.LENGTH_SHORT).show();
                             barcode.setText("");
+                            barcode.setEnabled(true);
 
                         } else {
                             new Aaaa().execute();
@@ -261,6 +277,8 @@ public class MainActivity extends AppCompatActivity {
                         return true;
                     } else {
                         Toast.makeText(MainActivity.this, "Ոչինչ մուտքագրված չէ", Toast.LENGTH_SHORT).show();
+                        MainActivity.this.registerReceiver(receiver, intentfilter);
+
                         return true;
                     }
                 }
@@ -677,7 +695,6 @@ public class MainActivity extends AppCompatActivity {
                     if (dd.getCode().equals(d.getCode())){
                         d.setCount(dd.getCount());
                         db.updateInfoByBarcode(d);
-                        Log.i("AAARRRR", "" + d.getCount());
                         a = true;
                     }
                 }
